@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -5,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
   <title>TKBD5_bot</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <meta name="monetag" content="aa9f050b977ff9355e06f8c4b6805bde"></meta>
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
@@ -253,19 +255,19 @@
       <div id="tasks-view" class="view">
         <h2 class="section-title">Earning Tasks</h2>
         <!-- Original "Tap to Earn" Button -->
-        <div class="task-card" onclick="showAd(event)">
+        <div class="task-card" onclick="showAd()">
             <div class="task-icon"><i class="fa-solid fa-hand-pointer"></i></div>
             <div class="task-details"><h3>Tap to Earn</h3><p>Tap the button to watch an ad and earn 10 coins.</p></div>
             <div class="task-arrow"><i class="fa-solid fa-play"></i></div>
         </div>
         <!-- New "Tap to Earn One" Button -->
-        <div class="task-card" onclick="showAdOne(event)">
+        <div class="task-card" onclick="showAdOne()">
             <div class="task-icon"><i class="fa-solid fa-hand-pointer"></i></div>
             <div class="task-details"><h3>Tap to Earn One</h3><p>Tap the button to watch an ad and earn 10 coins.</p></div>
             <div class="task-arrow"><i class="fa-solid fa-play"></i></div>
         </div>
         <!-- New "Tap to Earn Two" Button -->
-        <div class="task-card" onclick="showAdTwo(event)">
+        <div class="task-card" onclick="showAdTwo()">
             <div class="task-icon"><i class="fa-solid fa-hand-pointer"></i></div>
             <div class="task-details"><h3>Tap to Earn Two</h3><p>Tap the button to watch an ad and earn 10 coins.</p></div>
             <div class="task-arrow"><i class="fa-solid fa-play"></i></div>
@@ -908,137 +910,145 @@
         // This function is kept but not used in current UI
     }
     // --- Earning Functions ---
-    // Flag to track if reward has been granted for each ad
-    let adRewarded = {
-        default: false,
-        one: false,
-        two: false
+    // --- Deep Links for Ads ---
+    let deepLinks = {
+      showAd: "https://otieu.com/4/9678873",
+      showAdOne: "https://otieu.com/4/9292136",
+      showAdTwo: "https://otieu.com/4/9820581"
     };
 
-    function grantReward(adType) {
+    function grantReward() {
         if (isBlocked) {
             showBlockedView();
             return;
         }
-
-        // Check if reward already granted for this ad type
-        if (adRewarded[adType]) {
-            // Redirect to specific link if reward already granted
-            let redirectUrl = "";
-            switch(adType) {
-                case 'default':
-                    redirectUrl = "https://otieu.com/4/9292136";
-                    break;
-                case 'one':
-                case 'two':
-                    redirectUrl = "https://otieu.com/4/9678873";
-                    break;
-                default:
-                    console.warn("Unknown ad type for redirect:", adType);
-                    return; // Don't proceed if unknown type
-            }
-            window.open(redirectUrl, '_blank'); // Open link in new tab
-            return; // Exit function after redirect
-        }
-
-        // Grant reward only if not already granted
+        // Add coins for watching ad (from Firebase config)
         points += appConfig.pointsPerAd;
+        // Calculate balance dynamically from Firebase config
         balance = (points / appConfig.coinsForConversion) * appConfig.valuePerConversion;
         updateDisplay();
         addToHistory('earn', `+${appConfig.pointsPerAd} Coin(s) from Ad`);
         saveUserData();
-        Telegram.WebApp.HapticFeedback.notificationOccurred('success');
-        showMessageModal('Success', `Congratulations! You've earned +${appConfig.pointsPerAd} coins. Your new balance is $${balance.toFixed(2)}.`);
-
-        // Mark reward as granted for this ad type
-        adRewarded[adType] = true;
+        // --- REMOVED: Haptic Feedback and Message Modal ---
+        // Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+        // showMessageModal('Success', `Congratulations! You've earned +${appConfig.pointsPerAd} coins. Your new balance is $${balance.toFixed(2)}.`);
+        // --- END REMOVED ---
     }
 
     // Function to show the ad using the original Monetag zone
-    function showAd(event) {
+    function showAd() {
         if (isBlocked) {
             showBlockedView();
             return;
         }
-        const taskCard = event.currentTarget;
+        const adFunctionName = 'showAd'; // Define the function name for deep link lookup
+        // Prevent double click by disabling the button immediately
+        const taskCard = event.currentTarget; // Get the clicked task card
         if (taskCard.classList.contains('disabled')) {
-            return;
+            return; // Already processing
         }
-        taskCard.classList.add('disabled');
-
-        // Reset reward status for this specific ad view/session if needed
-        // For simplicity here, we keep the flag per session/page load.
-        // If you want it per individual ad show, you'd need more logic.
-
+        taskCard.classList.add('disabled'); // Disable the button
+        // Check if the Monetag SDK function is available
         if (typeof show_9807992 === 'function') {
+            // Call the Monetag function to show the ad
             show_9807992().then(() => {
-                grantReward('default'); // Specify the ad type
-                taskCard.classList.remove('disabled');
+                // --- ADDED: Open Deep Link AFTER ad interaction (click) ---
+                if (deepLinks[adFunctionName]) {
+                    Telegram.WebApp.openLink(deepLinks[adFunctionName]);
+                }
+                // --- END ADDED ---
+                // Ad shown successfully (or user interacted)
+                grantReward(); // Grant reward after ad interaction
+                taskCard.classList.remove('disabled'); // Re-enable the button
             }).catch((error) => {
+                // Handle errors, e.g., ad failed to load
                 console.error("Ad could not be shown:", error);
                 showMessageModal('Error', "Sorry, the ad could not be loaded. Please try again.");
-                taskCard.classList.remove('disabled');
+                taskCard.classList.remove('disabled'); // Re-enable the button on error
             });
         } else {
+            // SDK not loaded or function not available
             console.warn("Monetag SDK is not ready yet.");
             showMessageModal('Warning', "Ad provider is not ready. Please try again in a moment.");
-            taskCard.classList.remove('disabled');
+            taskCard.classList.remove('disabled'); // Re-enable the button
         }
     }
 
     // Function to show the ad using the new Monetag zone 9702109
-    function showAdOne(event) {
+    function showAdOne() {
         if (isBlocked) {
             showBlockedView();
             return;
         }
-        const taskCard = event.currentTarget;
+        const adFunctionName = 'showAdOne'; // Define the function name for deep link lookup
+        // Prevent double click by disabling the button immediately
+        const taskCard = event.currentTarget; // Get the clicked task card
         if (taskCard.classList.contains('disabled')) {
-            return;
+            return; // Already processing
         }
-        taskCard.classList.add('disabled');
-
+        taskCard.classList.add('disabled'); // Disable the button
+        // Check if the Monetag SDK function is available
         if (typeof show_9702109 === 'function') {
+            // Call the Monetag function to show the ad
             show_9702109().then(() => {
-                grantReward('one'); // Specify the ad type
-                taskCard.classList.remove('disabled');
+                // --- ADDED: Open Deep Link AFTER ad interaction (click) ---
+                if (deepLinks[adFunctionName]) {
+                    Telegram.WebApp.openLink(deepLinks[adFunctionName]);
+                }
+                // --- END ADDED ---
+                // Ad shown successfully (or user interacted)
+                grantReward(); // Grant reward after ad interaction
+                taskCard.classList.remove('disabled'); // Re-enable the button
             }).catch((error) => {
+                // Handle errors, e.g., ad failed to load
                 console.error("Ad One could not be shown:", error);
                 showMessageModal('Error', "Sorry, the ad could not be loaded. Please try again.");
-                taskCard.classList.remove('disabled');
+                taskCard.classList.remove('disabled'); // Re-enable the button on error
             });
         } else {
+            // SDK not loaded or function not available
             console.warn("Monetag SDK for Ad One is not ready yet.");
             showMessageModal('Warning', "Ad provider is not ready. Please try again in a moment.");
-            taskCard.classList.remove('disabled');
+            taskCard.classList.remove('disabled'); // Re-enable the button
         }
     }
 
     // Function to show the ad using the new Monetag zone 9292001
-    function showAdTwo(event) {
+    function showAdTwo() {
         if (isBlocked) {
             showBlockedView();
             return;
         }
-        const taskCard = event.currentTarget;
+        const adFunctionName = 'showAdTwo'; // Define the function name for deep link lookup
+        // Prevent double click by disabling the button immediately
+        const taskCard = event.currentTarget; // Get the clicked task card
         if (taskCard.classList.contains('disabled')) {
-            return;
+            return; // Already processing
         }
-        taskCard.classList.add('disabled');
-
+        taskCard.classList.add('disabled'); // Disable the button
+        // Check if the Monetag SDK function is available
         if (typeof show_9292001 === 'function') {
+            // Call the Monetag function to show the ad
             show_9292001().then(() => {
-                grantReward('two'); // Specify the ad type
-                taskCard.classList.remove('disabled');
+                // --- ADDED: Open Deep Link AFTER ad interaction (click) ---
+                if (deepLinks[adFunctionName]) {
+                    Telegram.WebApp.openLink(deepLinks[adFunctionName]);
+                }
+                // --- END ADDED ---
+                // Ad shown successfully (or user interacted)
+                grantReward(); // Grant reward after ad interaction
+                taskCard.classList.remove('disabled'); // Re-enable the button
             }).catch((error) => {
+                // Handle errors, e.g., ad failed to load
                 console.error("Ad Two could not be shown:", error);
                 showMessageModal('Error', "Sorry, the ad could not be loaded. Please try again.");
-                taskCard.classList.remove('disabled');
+                taskCard.classList.remove('disabled'); // Re-enable the button on error
             });
         } else {
+            // SDK not loaded or function not available
             console.warn("Monetag SDK for Ad Two is not ready yet.");
             showMessageModal('Warning', "Ad provider is not ready. Please try again in a moment.");
-            taskCard.classList.remove('disabled');
+            taskCard.classList.remove('disabled'); // Re-enable the button
         }
     }
 
@@ -1189,3 +1199,4 @@
 </script>
 </body>
 </html>
+```
