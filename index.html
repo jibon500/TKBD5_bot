@@ -11,24 +11,36 @@
   <style>
     /* Existing styles from your file */
     :root {
-      /* Default fallback values (light mode) */
-      --primary-color: #2ed914;
+      /* -- Updated all colors to white theme -- */
+      --primary-color: #2ed914; /* Keep green for accents */
       --primary-hover: #3bff21;
-      --secondary-color: #e0e0e0;
-      --background-color: #ffffff;
-      --text-color: #000000;
-      --text-muted-color: #666666;
-      --accent-color: #ff8c00;
-      --card-bg: #f5f5f5;
-      --error-color: #ff4444;
-      --pending-color: #ffc107;
-      --processing-color: #17a2b8;
-      --success-color: #28a745;
-      --rejected-color: #dc3545;
-      --requesting-color: #dc3545;
-      --border-color: rgba(0, 0, 0, 0.1);
+      --secondary-color: #e0e0e0; /* Light grey instead of dark */
+      --background-color: #ffffff; /* White background */
+      --text-color: #000000; /* Black text */
+      --text-muted-color: #666666; /* Dark grey for muted text */
+      --accent-color: #ff8c00; /* Keep orange for accents */
+      --card-bg: #f5f5f5; /* Light grey card background */
+      --error-color: #ff4444; /* Error color */
+      --pending-color: #ffc107; /* Yellow for pending */
+      --processing-color: #17a2b8; /* Blue for processing */
+      --success-color: #28a745; /* Green for success */
+      --rejected-color: #dc3545; /* Red for rejected */
+      --requesting-color: #dc3545; /* Red for requesting state */
+      /* Dark mode variables */
+      --dm-primary-color: #4CAF50;
+      --dm-primary-hover: #66BB6A;
+      --dm-secondary-color: #424242;
+      --dm-background-color: #121212;
+      --dm-text-color: #FFFFFF;
+      --dm-text-muted-color: #BDBDBD;
+      --dm-accent-color: #FFA726;
+      --dm-card-bg: #1E1E1E;
+      --dm-error-color: #EF5350;
+      --dm-border-color: rgba(255, 255, 255, 0.1);
+      /* New: Balance Card Background Color Variable */
+      --balance-card-bg: #00a651; /* Default color */
     }
-    /* Light mode variables (initially same as root, will be overridden by Firebase) */
+    /* Light mode (default) */
     body.light-mode {
       --primary-color: #2ed914;
       --primary-hover: #3bff21;
@@ -45,24 +57,26 @@
       --rejected-color: #dc3545;
       --requesting-color: #dc3545;
       --border-color: rgba(0, 0, 0, 0.1);
+      --balance-card-bg: #00a651; /* Default light mode color */
     }
-    /* Dark mode variables (will be overridden by Firebase) */
+    /* Dark mode */
     body.dark-mode {
-      --primary-color: #4CAF50;
-      --primary-hover: #66BB6A;
-      --secondary-color: #424242;
-      --background-color: #121212;
-      --text-color: #FFFFFF;
-      --text-muted-color: #BDBDBD;
-      --accent-color: #FFA726;
-      --card-bg: #1E1E1E;
-      --error-color: #EF5350;
+      --primary-color: var(--dm-primary-color);
+      --primary-hover: var(--dm-primary-hover);
+      --secondary-color: var(--dm-secondary-color);
+      --background-color: var(--dm-background-color);
+      --text-color: var(--dm-text-color);
+      --text-muted-color: var(--dm-text-muted-color);
+      --accent-color: var(--dm-accent-color);
+      --card-bg: var(--dm-card-bg);
+      --error-color: var(--dm-error-color);
       --pending-color: #FFD54F;
       --processing-color: #4FC3F7;
       --success-color: #66BB6A;
       --rejected-color: #EF5350;
       --requesting-color: #EF5350;
-      --border-color: rgba(255, 255, 255, 0.1);
+      --border-color: var(--dm-border-color);
+      --balance-card-bg: #00753a; /* Default dark mode color */
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
@@ -93,7 +107,8 @@
     .user-info .username { font-size: 18px; font-weight: 700; margin: 0; }
     .user-info .title { font-size: 14px; color: var(--text-muted-color); margin: 0; }
     .balance-card {
-      background: linear-gradient(135deg, #00a651, #00753a); border-radius: 16px; padding: 20px;
+      background: linear-gradient(135deg, var(--balance-card-bg), #00753a); /* Use the custom property */
+      border-radius: 16px; padding: 20px;
       text-align: center; margin-bottom: 25px;
     }
     .balance-card .label { font-size: 16px; opacity: 0.9; color: #ffffff; margin-bottom: 5px; }
@@ -515,6 +530,53 @@
         color: var(--text-muted-color);
         font-size: 14px; /* Increased font size */
     }
+    /* --- Inbox Modal Styles --- */
+    #inbox-modal .modal-content {
+        width: 95%;
+        max-width: 400px;
+        max-height: 80vh;
+        overflow-y: auto;
+        text-align: left;
+        padding: 20px;
+    }
+    #inbox-list {
+        max-height: 60vh;
+        overflow-y: auto;
+        margin-bottom: 15px;
+    }
+    .inbox-item {
+        background: var(--card-bg);
+        padding: 15px;
+        border-radius: 10px;
+        margin-bottom: 10px;
+        border: 1px solid var(--border-color);
+        display: flex;
+        flex-direction: column;
+    }
+    .inbox-item h4 {
+        margin: 0 0 5px 0;
+        font-size: 16px;
+        color: var(--primary-color); /* Use primary color for sender */
+    }
+    .inbox-item p {
+        margin: 0 0 5px 0;
+        font-size: 14px;
+        color: var(--text-color);
+    }
+    .inbox-item small {
+        color: var(--text-muted-color);
+        font-size: 12px;
+    }
+    .inbox-item.unread {
+        border-left: 4px solid var(--primary-color); /* Highlight unread messages */
+    }
+    .inbox-item.sent {
+        background: var(--secondary-color); /* Slightly different background for sent messages */
+    }
+    .inbox-item.sent h4, .inbox-item.sent p {
+        color: var(--text-color);
+    }
+    /* --- End Inbox Modal Styles --- */
   </style>
   <!-- Monetag SDK Scripts -->
   <script src='//libtl.com/sdk.js' data-zone='9807992' data-sdk='show_9807992'></script>
@@ -719,8 +781,8 @@
             <!-- Notifications will be populated here -->
         </div>
         <div class="notification-actions">
-            <button class="admin-support-btn" onclick="openAdminMessageModal()">
-                <i class="fa-solid fa-headset"></i> Support Admin
+            <button class="admin-support-btn" onclick="openInboxModal()"> <!-- Changed from openAdminMessageModal -->
+                <i class="fa-solid fa-envelope"></i> Inbox
             </button>
             <button class="important-notices-btn" onclick="openImportantNoticesModal()">
                 <i class="fa-solid fa-exclamation-circle"></i> Important Notices
@@ -731,19 +793,19 @@
         </div>
     </div>
   </div>
-  <!-- Admin Message Modal -->
-  <div class="modal-overlay" id="admin-message-modal">
+  <!-- Inbox Modal (Replaces old Admin Message Modal) -->
+  <div class="modal-overlay" id="inbox-modal">
     <div class="modal-content">
-        <h3>Support Admin</h3>
-        <div id="admin-message-history">
-            <!-- Message history will be populated here -->
+        <h3>Inbox</h3>
+        <div id="inbox-list">
+            <!-- Inbox messages will be populated here -->
         </div>
         <div style="display: flex; align-items: center;">
-            <input type="text" id="admin-message-input" placeholder="Type your message...">
-            <button id="send-admin-message"><i class="fa-solid fa-paper-plane"></i></button>
+            <input type="text" id="inbox-message-input" placeholder="Type your message to admin...">
+            <button id="send-inbox-message"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
         <div class="modal-actions" style="margin-top: 20px;">
-            <button class="action-button primary-button" onclick="closeAdminMessageModal()">Close</button>
+            <button class="action-button primary-button" onclick="closeInboxModal()">Close</button>
         </div>
     </div>
   </div>
@@ -760,6 +822,33 @@
     </div>
   </div>
 <script>
+    // --- Theme Toggle Logic ---
+    document.addEventListener('DOMContentLoaded', () => {
+        const themeToggle = document.getElementById('themeToggle');
+        const notificationToggle = document.getElementById('notificationToggle');
+        const themeIcon = themeToggle.querySelector('i');
+        // Check for saved theme preference or respect system preference
+        const savedTheme = localStorage.getItem('theme');
+        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
+            document.body.classList.replace('light-mode', 'dark-mode');
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
+        }
+        themeToggle.addEventListener('click', () => {
+            if (document.body.classList.contains('light-mode')) {
+                document.body.classList.replace('light-mode', 'dark-mode');
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                document.body.classList.replace('dark-mode', 'light-mode');
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
+                localStorage.setItem('theme', 'light');
+            }
+        });
+        notificationToggle.addEventListener('click', openNotificationModal);
+        // Initialize the app
+        initApp();
+    });
     // --- Firebase Configuration ---
     const firebaseConfig = {
       apiKey: "AIzaSyD3BGZ0MVLpbQbIpLUAnYvWNEIyk7Y6S0Q",
@@ -774,84 +863,6 @@
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
-    // --- Theme Management ---
-    let themeListener = null;
-    function applyTheme(themeData) {
-        if (!themeData) return;
-        const root = document.documentElement;
-        Object.keys(themeData).forEach(key => {
-            if (key.startsWith('--')) {
-                root.style.setProperty(key, themeData[key]);
-            }
-        });
-    }
-
-    // Function to load theme from Firebase based on current mode
-    async function loadThemeFromFirebase() {
-        try {
-            const themeSnapshot = await database.ref('appTheme').once('value');
-            const themeData = themeSnapshot.val();
-            if (themeData) {
-                // Load theme based on current mode
-                const currentMode = document.body.classList.contains('dark-mode') ? 'darkMode' : 'lightMode';
-                if (themeData[currentMode]) {
-                    applyTheme(themeData[currentMode]);
-                }
-            }
-        } catch (error) {
-            console.error("Failed to load theme from Firebase:", error);
-        }
-    }
-
-    // Function to set up real-time listener for theme changes
-    function setupThemeListener() {
-        if (themeListener) {
-            database.ref('appTheme').off('value', themeListener);
-        }
-        themeListener = database.ref('appTheme').on('value', (snapshot) => {
-            const themeData = snapshot.val();
-            if (themeData) {
-                // Apply theme based on current mode
-                const currentMode = document.body.classList.contains('dark-mode') ? 'darkMode' : 'lightMode';
-                if (themeData[currentMode]) {
-                    applyTheme(themeData[currentMode]);
-                }
-            }
-        });
-    }
-
-    // --- Theme Toggle Logic ---
-    document.addEventListener('DOMContentLoaded', () => {
-        const themeToggle = document.getElementById('themeToggle');
-        const notificationToggle = document.getElementById('notificationToggle');
-        const themeIcon = themeToggle.querySelector('i');
-
-        // Check for saved theme preference or respect system preference
-        const savedTheme = localStorage.getItem('theme');
-        const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if (savedTheme === 'dark' || (!savedTheme && systemPrefersDark)) {
-            document.body.classList.replace('light-mode', 'dark-mode');
-            themeIcon.classList.replace('fa-moon', 'fa-sun');
-        }
-
-        themeToggle.addEventListener('click', () => {
-            if (document.body.classList.contains('light-mode')) {
-                document.body.classList.replace('light-mode', 'dark-mode');
-                themeIcon.classList.replace('fa-moon', 'fa-sun');
-                localStorage.setItem('theme', 'dark');
-            } else {
-                document.body.classList.replace('dark-mode', 'light-mode');
-                themeIcon.classList.replace('fa-sun', 'fa-moon');
-                localStorage.setItem('theme', 'light');
-            }
-            // Reload theme from Firebase for the new mode
-            loadThemeFromFirebase();
-        });
-
-        notificationToggle.addEventListener('click', openNotificationModal);
-        // Initialize the app
-        initApp();
-    });
     // --- State Variables ---
     let points = 0;
     let balance = 0.00;
@@ -867,7 +878,8 @@
       referralClaimThreshold: 200, // Default value
       minWithdrawAmount: 5, // Default value
       dailyAdLimitPerUser: 10, // Default daily ad limit
-      isAdSystemActive: true // Default ad system status
+      isAdSystemActive: true, // Default ad system status
+      balanceCardColor: "#00a651" // New: Default balance card color
     };
     let referralData = {
       referralCount: 0,
@@ -879,6 +891,7 @@
     let userPointsBalanceListener = null;
     let referralListener = null;
     let appConfigListener = null; // New listener for appConfig
+    let inboxListener = null; // New listener for inbox
     // Ad tracking variables
     let adsWatchedToday = 0;
     let lastAdWatchTime = null; // Will be a Date object or null
@@ -888,7 +901,7 @@
     // Dynamic from Firebase: 1000 coins = 30 cents = $0.30 USD
     // 1 coin = $0.0003 USD (calculated dynamically)
     // --- Core App Logic ---
-    async function initApp() {
+    function initApp() {
         if (window.Telegram && Telegram.WebApp) {
             Telegram.WebApp.ready();
             Telegram.WebApp.expand();
@@ -897,24 +910,18 @@
                 // Don't show blocked view immediately, wait for Firebase check
                 console.log("Telegram user data not available immediately, waiting for Firebase check");
                 showView('home-view'); // Show home view initially
-                // Load theme first
-                await loadThemeFromFirebase();
-                setupThemeListener(); // Then setup listener
                 loadAppConfig().then(() => {
                     loadUserData().then(() => {
                         loadTelegramUser();
                         renderLeaderboard();
                         checkForReferral(); // Check if this user was referred
                     }).catch(error => {
-                        console.error("Error loading user ", error);
+                        console.error("Error loading user data:", error);
                         // Handle error appropriately, maybe show a message
                     });
                 });
                 return;
             }
-            // Load theme first
-            await loadThemeFromFirebase();
-            setupThemeListener(); // Then setup listener
             // Load app configuration and user data
             loadAppConfig().then(() => {
                 loadUserData().then(() => {
@@ -924,7 +931,7 @@
                     checkForReferral(); // Check if this user was referred
                     startResetTimer(); // Start the 12-hour reset timer logic
                 }).catch(error => {
-                    console.error("Error loading user ", error);
+                    console.error("Error loading user data:", error);
                     // Handle error appropriately
                 });
             }).catch(error => {
@@ -935,9 +942,6 @@
             // Don't show blocked view for non-Telegram access, just log
             console.log("This app must be opened in Telegram.");
             showView('home-view'); // Show home view initially
-            // Load theme first
-            await loadThemeFromFirebase();
-            setupThemeListener(); // Then setup listener
         }
     }
     // --- Firebase Functions ---
@@ -954,8 +958,11 @@
                     referralClaimThreshold: config.referralClaimThreshold !== undefined ? config.referralClaimThreshold : 200,
                     minWithdrawAmount: config.minWithdrawAmount !== undefined ? config.minWithdrawAmount : 5,
                     dailyAdLimitPerUser: config.dailyAdLimitPerUser !== undefined ? config.dailyAdLimitPerUser : 10,
-                    isAdSystemActive: config.isAdSystemActive !== undefined ? config.isAdSystemActive : true
+                    isAdSystemActive: config.isAdSystemActive !== undefined ? config.isAdSystemActive : true,
+                    balanceCardColor: config.balanceCardColor || "#00a651" // Load balance card color
                 };
+                // Apply the loaded color immediately
+                updateBalanceCardColor(appConfig.balanceCardColor);
             }
         } catch (error) {
             console.error("Failed to load app config:", error);
@@ -1050,7 +1057,7 @@
             startResetTimer();
             // --- End New ---
         } catch (error) {
-            console.error("Failed to load user ", error);
+            console.error("Failed to load user data:", error);
             throw error;
         }
     }
@@ -1226,7 +1233,7 @@
                     // This is primarily handled by requestWithdraw(), but we check here too for consistency if listener is added after request
                     // Only deduct if not already deducted (e.g., if listener was removed and re-added)
                     // A simple check: if user's current balance/points are higher than what they should be after deduction, deduct now.
-                    // This is a bit complex without storing "deducted" flag per request.
+                    // This is a bit complex without storing "deducted" flag per request. 
                     // For now, we rely on requestWithdraw() to do the initial deduction.
                     // This listener primarily handles status *changes*.
                 });
@@ -1319,6 +1326,7 @@
             if (config) {
                 const oldLimit = appConfig.dailyAdLimitPerUser;
                 const oldStatus = appConfig.isAdSystemActive;
+                const oldColor = appConfig.balanceCardColor; // Store old color
                 appConfig = {
                     pointsPerAd: config.pointsPerAd || 10,
                     coinsForConversion: config.coinsForConversion || 1000,
@@ -1327,9 +1335,14 @@
                     referralClaimThreshold: config.referralClaimThreshold !== undefined ? config.referralClaimThreshold : 200,
                     minWithdrawAmount: config.minWithdrawAmount !== undefined ? config.minWithdrawAmount : 5,
                     dailyAdLimitPerUser: config.dailyAdLimitPerUser !== undefined ? config.dailyAdLimitPerUser : 10,
-                    isAdSystemActive: config.isAdSystemActive !== undefined ? config.isAdSystemActive : true
+                    isAdSystemActive: config.isAdSystemActive !== undefined ? config.isAdSystemActive : true,
+                    balanceCardColor: config.balanceCardColor || "#00a651" // Load balance card color
                 };
                 console.log("App config updated:", appConfig);
+                // Check if balance card color changed
+                if (oldColor !== appConfig.balanceCardColor) {
+                    updateBalanceCardColor(appConfig.balanceCardColor);
+                }
                 updateDisplay();
                 updateAdButtonStates(); // Update button states when global config changes
                 // If the limit or global status changed, we might need to update UI state
@@ -1339,6 +1352,26 @@
             }
         });
     }
+
+    // Function to update balance card color
+    function updateBalanceCardColor(newColor) {
+        document.documentElement.style.setProperty('--balance-card-bg', newColor);
+        console.log("Balance card color updated to:", newColor);
+    }
+
+    // Setup listener for inbox messages
+    function setupInboxListener(userRef) {
+        if (inboxListener) {
+            // Remove previous listener if exists
+            userRef.child('inbox').off('value', inboxListener);
+        }
+        // Set up new listener
+        inboxListener = userRef.child('inbox').on('value', (snapshot) => {
+            const messages = snapshot.val();
+            renderInboxMessages(messages);
+        });
+    }
+
     // Claim referral earnings (convert to main balance)
     async function claimReferralEarnings() {
         if (!tgUser || !tgUser.id) return;
@@ -1392,7 +1425,7 @@
                 historyLog: historyLog
             });
         } catch (error) {
-            console.error("Failed to save user ", error);
+            console.error("Failed to save user data:", error);
         }
     }
     // --- View Management ---
@@ -2114,117 +2147,137 @@
     function closeNotificationModal() {
         document.getElementById('notification-modal').classList.remove('active');
     }
-    // --- Admin Message Modal Logic ---
-    let adminMessagesListener = null;
-    function openAdminMessageModal() {
+
+    // --- Inbox Modal Logic ---
+    function openInboxModal() {
         closeNotificationModal(); // Close notification modal first
         if (isBlocked) {
             showBlockedView();
             return;
         }
-        const historyDiv = document.getElementById('admin-message-history');
-        // --- Update: Loading message style ---
-        historyDiv.innerHTML = '<p style="text-align: center; color: var(--text-muted-color); margin: auto;">Loading messages...</p>';
-        // --- End Update ---
-        document.getElementById('admin-message-input').value = '';
-        document.getElementById('admin-message-modal').classList.add('active');
+        const list = document.getElementById('inbox-list');
+        list.innerHTML = '<p style="text-align: center; color: var(--text-muted-color);">Loading messages...</p>';
+        document.getElementById('inbox-message-input').value = '';
+        document.getElementById('inbox-modal').classList.add('active');
         // Load message history from Firebase
-        loadAdminMessageHistory();
+        loadInboxMessages();
         // Setup real-time listener for new messages
-        setupAdminMessagesListener();
-    }
-    function closeAdminMessageModal() {
-        document.getElementById('admin-message-modal').classList.remove('active');
-        // Remove listener when closing
-        if (adminMessagesListener && tgUser && tgUser.id) {
+        if (tgUser && tgUser.id) {
             const userRef = database.ref('users/' + tgUser.id);
-            userRef.child('adminMessages').off('value', adminMessagesListener);
-            adminMessagesListener = null;
+            setupInboxListener(userRef);
         }
     }
-    function loadAdminMessageHistory() {
+    function closeInboxModal() {
+        document.getElementById('inbox-modal').classList.remove('active');
+        // Remove listener when closing
+        if (inboxListener && tgUser && tgUser.id) {
+            const userRef = database.ref('users/' + tgUser.id);
+            userRef.child('inbox').off('value', inboxListener);
+            inboxListener = null;
+        }
+    }
+    function loadInboxMessages() {
         if (!tgUser || !tgUser.id) return;
-        const userRef = database.ref('users/' + tgUser.id + '/adminMessages');
+        const userRef = database.ref('users/' + tgUser.id + '/inbox');
         userRef.once('value').then((snapshot) => {
             const messages = snapshot.val();
-            renderAdminMessageHistory(messages);
+            renderInboxMessages(messages);
         }).catch((error) => {
-            console.error("Error loading admin messages:", error);
-            document.getElementById('admin-message-history').innerHTML = '<p style="text-align: center; color: var(--error-color);">Failed to load messages.</p>';
+            console.error("Error loading inbox messages:", error);
+            document.getElementById('inbox-list').innerHTML = '<p style="text-align: center; color: var(--error-color);">Failed to load messages.</p>';
         });
     }
-    // --- Update: renderAdminMessageHistory function ---
-    function renderAdminMessageHistory(messagesData) {
-        const historyDiv = document.getElementById('admin-message-history');
+    function renderInboxMessages(messagesData) {
+        const list = document.getElementById('inbox-list');
         // Clear previous content
-        historyDiv.innerHTML = '';
+        list.innerHTML = '';
         if (!messagesData) {
             // Add "No messages" message if history is empty
             const noMsgElement = document.createElement('p');
             noMsgElement.style.textAlign = 'center';
             noMsgElement.style.color = 'var(--text-muted-color)';
-            noMsgElement.style.margin = 'auto'; // Center vertically if needed
-            noMsgElement.textContent = 'No messages yet. Start a conversation!';
-            historyDiv.appendChild(noMsgElement);
+            noMsgElement.textContent = 'No messages yet.';
+            list.appendChild(noMsgElement);
             return;
         }
         const messages = Object.values(messagesData);
         // Sort messages by timestamp (oldest first)
         messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-        // Create and append message elements
+
+        // Group messages by sender and direction (admin/user)
+        const groupedMessages = {};
         messages.forEach(msg => {
-            const isUser = msg.sender === 'user';
-            const bubbleClass = isUser ? 'user-message' : 'admin-message';
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message-bubble ${bubbleClass}`;
-            // Add message text and timestamp
-            messageDiv.innerHTML = `
-                ${msg.text}
-                <br><small>${new Date(msg.timestamp).toLocaleTimeString()}</small>
-            `;
-            historyDiv.appendChild(messageDiv);
+            const sender = msg.sender || 'admin'; // Assume admin if no sender field
+            if (!groupedMessages[sender]) {
+                groupedMessages[sender] = [];
+            }
+            groupedMessages[sender].push(msg);
         });
-        // Scroll to bottom after adding messages
-        historyDiv.scrollTop = historyDiv.scrollHeight;
-    }
-    // --- End Update ---
-    function setupAdminMessagesListener() {
-        if (!tgUser || !tgUser.id) return;
-        const userRef = database.ref('users/' + tgUser.id);
-        // Remove previous listener if exists
-        if (adminMessagesListener) {
-            userRef.child('adminMessages').off('value', adminMessagesListener);
+
+        // Render grouped messages
+        Object.entries(groupedMessages).forEach(([sender, msgList]) => {
+            msgList.forEach(msg => {
+                const isUser = msg.sender === 'user';
+                const itemClass = `inbox-item ${isUser ? 'sent' : 'received'} ${msg.read ? '' : 'unread'}`;
+                const senderLabel = isUser ? 'You' : 'Admin';
+                const messageDiv = document.createElement('div');
+                messageDiv.className = itemClass;
+                messageDiv.innerHTML = `
+                    <h4>${senderLabel}</h4>
+                    <p>${msg.text}</p>
+                    <small>${new Date(msg.timestamp).toLocaleString()}</small>
+                `;
+                list.appendChild(messageDiv);
+            });
+        });
+
+        // Mark messages as read if modal is opened
+        if (messages.length > 0 && tgUser && tgUser.id) {
+            const userRef = database.ref('users/' + tgUser.id + '/inbox');
+            const updates = {};
+            messages.forEach(msg => {
+                if (!msg.read) {
+                    updates[msg.id + '/read'] = true; // Assuming each message has an 'id' or key
+                }
+            });
+            if (Object.keys(updates).length > 0) {
+                userRef.update(updates).then(() => {
+                    console.log("Messages marked as read");
+                }).catch(error => {
+                    console.error("Error marking messages as read:", error);
+                });
+            }
         }
-        // Set up new listener
-        adminMessagesListener = userRef.child('adminMessages').on('value', (snapshot) => {
-            const messages = snapshot.val();
-            renderAdminMessageHistory(messages);
-        });
     }
-    document.getElementById('send-admin-message').addEventListener('click', sendAdminMessage);
-    document.getElementById('admin-message-input').addEventListener('keypress', function(e) {
+
+    document.getElementById('send-inbox-message').addEventListener('click', sendInboxMessage);
+    document.getElementById('inbox-message-input').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
-            sendAdminMessage();
+            sendInboxMessage();
         }
     });
-    function sendAdminMessage() {
-        const input = document.getElementById('admin-message-input');
+
+    function sendInboxMessage() {
+        const input = document.getElementById('inbox-message-input');
         const messageText = input.value.trim();
         if (!messageText) return;
         if (!tgUser || !tgUser.id) {
             showMessageModal('Error', 'User data not available.');
             return;
         }
+
         const messageData = {
             sender: 'user',
             text: messageText,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            read: false // New user messages are not read by admin yet
         };
-        // Push message to Firebase
-        const userRef = database.ref('users/' + tgUser.id + '/adminMessages');
+
+        // Push message to Firebase under 'inbox'
+        const userRef = database.ref('users/' + tgUser.id + '/inbox');
         userRef.push(messageData)
             .then(() => {
-                console.log("Message sent to Firebase");
+                console.log("Message sent to inbox");
                 input.value = ''; // Clear input
                 // The UI will update automatically via the listener
             })
@@ -2233,6 +2286,8 @@
                 showMessageModal('Error', 'Failed to send message. Please try again.');
             });
     }
+    // --- End Inbox Modal Logic ---
+
     // --- Important Notices Modal Logic ---
     function openImportantNoticesModal() {
         closeNotificationModal(); // Close notification modal first
@@ -2299,13 +2354,10 @@
          if (appConfigListener) {
             database.ref('appConfig').off('value', appConfigListener);
         }
-        if (adminMessagesListener && tgUser && tgUser.id) {
+         if (inboxListener && tgUser && tgUser.id) {
             const userRef = database.ref('users/' + tgUser.id);
-            userRef.child('adminMessages').off('value', adminMessagesListener);
-            adminMessagesListener = null;
-        }
-        if (themeListener) {
-            database.ref('appTheme').off('value', themeListener);
+            userRef.child('inbox').off('value', inboxListener);
+            inboxListener = null;
         }
         if (resetTimerInterval) {
             clearInterval(resetTimerInterval);
