@@ -774,10 +774,8 @@
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
-
     // --- Theme Management ---
     let themeListener = null;
-
     function applyTheme(themeData) {
         if (!themeData) return;
         const root = document.documentElement;
@@ -788,6 +786,7 @@
         });
     }
 
+    // Function to load theme from Firebase based on current mode
     async function loadThemeFromFirebase() {
         try {
             const themeSnapshot = await database.ref('appTheme').once('value');
@@ -804,6 +803,7 @@
         }
     }
 
+    // Function to set up real-time listener for theme changes
     function setupThemeListener() {
         if (themeListener) {
             database.ref('appTheme').off('value', themeListener);
@@ -825,6 +825,7 @@
         const themeToggle = document.getElementById('themeToggle');
         const notificationToggle = document.getElementById('notificationToggle');
         const themeIcon = themeToggle.querySelector('i');
+
         // Check for saved theme preference or respect system preference
         const savedTheme = localStorage.getItem('theme');
         const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -832,6 +833,7 @@
             document.body.classList.replace('light-mode', 'dark-mode');
             themeIcon.classList.replace('fa-moon', 'fa-sun');
         }
+
         themeToggle.addEventListener('click', () => {
             if (document.body.classList.contains('light-mode')) {
                 document.body.classList.replace('light-mode', 'dark-mode');
@@ -845,11 +847,11 @@
             // Reload theme from Firebase for the new mode
             loadThemeFromFirebase();
         });
+
         notificationToggle.addEventListener('click', openNotificationModal);
         // Initialize the app
         initApp();
     });
-
     // --- State Variables ---
     let points = 0;
     let balance = 0.00;
@@ -882,11 +884,9 @@
     let lastAdWatchTime = null; // Will be a Date object or null
     let adStatus = 'Active'; // User-specific ad status, default 'Active'
     let resetTimerInterval = null;
-
     // --- Updated Balance Logic ---
     // Dynamic from Firebase: 1000 coins = 30 cents = $0.30 USD
     // 1 coin = $0.0003 USD (calculated dynamically)
-
     // --- Core App Logic ---
     async function initApp() {
         if (window.Telegram && Telegram.WebApp) {
@@ -940,7 +940,6 @@
             setupThemeListener(); // Then setup listener
         }
     }
-
     // --- Firebase Functions ---
     async function loadAppConfig() {
         try {
