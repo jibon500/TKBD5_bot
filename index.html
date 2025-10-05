@@ -19,7 +19,7 @@
       --background-color: #ffffff; /* White background */
       --text-color: #000000; /* Black text */
       --text-muted-color: #666666; /* Dark grey for muted text */
-      --accent-color: #ff8c00; /* Keep orange for accents */
+      --accent-color: #ff8c00; /* Orange for accents */
       --card-bg: #f5f5f5; /* Light grey card background */
       --error-color: #ff4444; /* Error color */
       --pending-color: #ffc107; /* Yellow for pending */
@@ -574,6 +574,41 @@
       background: #ccc;
       cursor: not-allowed;
     }
+    .vip-package-card .watch-button {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      background: var(--success-color);
+      color: #fff;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+    .vip-package-card .watch-button:hover {
+      background: #218838; /* Slightly darker green */
+    }
+    .vip-package-card .status-badge {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    .status-pending {
+      background-color: var(--pending-color);
+      color: #000;
+    }
+    .status-active {
+      background-color: var(--success-color);
+      color: #fff;
+    }
+    .status-inactive {
+      background-color: var(--error-color);
+      color: #fff;
+    }
 
     /* === NEW: Deposit Form Modal === */
     #deposit-form-modal .modal-content {
@@ -986,6 +1021,7 @@
     // === NEW: VIP State ===
     let vipPackages = [];
     let currentSelectedPackage = null;
+    let userVipSubscriptions = {}; // To store user's active/pending subscriptions
 
     // --- Updated Balance Logic ---
     // Dynamic from Firebase: 1000 coins = 30 cents = $0.30 USD
@@ -1006,6 +1042,7 @@
                         renderLeaderboard();
                         checkForReferral(); // Check if this user was referred
                         loadVipPackages(); // Load VIP packages
+                        loadUserVipSubscriptions(); // Load user's VIP subscriptions
                     }).catch(error => {
                         console.error("Error loading user ", error);
                         // Handle error appropriately, maybe show a message
@@ -1022,6 +1059,7 @@
                     checkForReferral(); // Check if this user was referred
                     startResetTimer(); // Start the 12-hour reset timer logic
                     loadVipPackages(); // Load VIP packages
+                    loadUserVipSubscriptions(); // Load user's VIP subscriptions
                 }).catch(error => {
                     console.error("Error loading user ", error);
                     // Handle error appropriately
@@ -1509,6 +1547,8 @@
             if (vipPackages.length === 0) {
                 loadVipPackages();
             }
+            // Also reload user's subscriptions to reflect any changes
+            loadUserVipSubscriptions();
         }
     }
     function showBlockedView() {
@@ -2394,6 +2434,19 @@
         }
     }
 
+    async function loadUserVipSubscriptions() {
+        if (!tgUser || !tgUser.id) return;
+        try {
+            const snapshot = await database.ref('users/' + tgUser.id + '/vipSubscriptions').once('value');
+            userVipSubscriptions = snapshot.val() || {};
+            console.log("User VIP subscriptions loaded:", userVipSubscriptions);
+            // Re-render packages to reflect updated subscription status
+            renderVipPackages();
+        } catch (error) {
+            console.error("Failed to load user VIP subscriptions:", error);
+        }
+    }
+
     function renderVipPackages() {
         const container = document.getElementById('vip-packages-list');
         if (vipPackages.length === 0) {
@@ -2403,16 +2456,41 @@
 
         container.innerHTML = vipPackages.map(pkg => {
             const isActive = pkg.status === 'Active';
+            // Check if user has an active or pending subscription for this package
+            const userSubscription = userVipSubscriptions[pkg.id];
+            let buttonHtml = '';
+            let statusBadgeHtml = '';
+
+            if (userSubscription) {
+                const subStatus = userSubscription.status;
+                statusBadgeHtml = `<div class="status-badge status-${subStatus.toLowerCase()}">${subStatus}</div>`;
+
+                if (subStatus === 'Active') {
+                    buttonHtml = `<button class="watch-button" onclick="watchVipVideo('${pkg.id}')">Watch Video Now</button>`;
+                } else if (subStatus === 'Pending') {
+                    buttonHtml = `<button class="buy-button" disabled>Pending...</button>`;
+                } else {
+                    // Inactive or other status - might not happen in normal flow, but handle it
+                    buttonHtml = `<button class="buy-button" ${!isActive ? 'disabled' : ''} onclick="selectVipPackage('${pkg.id}')">
+                        ${isActive ? 'Buy Now' : 'Inactive'}
+                    </button>`;
+                }
+            } else {
+                // No subscription for this package
+                buttonHtml = `<button class="buy-button" ${!isActive ? 'disabled' : ''} onclick="selectVipPackage('${pkg.id}')">
+                    ${isActive ? 'Buy Now' : 'Inactive'}
+                </button>`;
+            }
+
             return `
                 <div class="vip-package-card ${!isActive ? 'inactive' : ''}">
+                    ${statusBadgeHtml}
                     <h3 class="package-name">${pkg.name}</h3>
                     <div class="package-detail">Duration: ${pkg.durationDays} days</div>
                     <div class="package-detail">Daily Video Limit: ${pkg.dailyVideoLimit}</div>
                     <div class="package-detail">Coins per Video: ${pkg.coinsPerVideo}</div>
                     <div class="package-price">$${pkg.price.toFixed(2)}</div>
-                    <button class="buy-button" ${!isActive ? 'disabled' : ''} onclick="selectVipPackage('${pkg.id}')">
-                        ${isActive ? 'Buy Now' : 'Inactive'}
-                    </button>
+                    ${buttonHtml}
                 </div>
             `;
         }).join('');
@@ -2453,17 +2531,16 @@
         try {
             const userRef = database.ref('users/' + tgUser.id);
             const now = new Date();
-            const expiresAt = new Date(now.getTime() + pkg.durationDays * 24 * 60 * 60 * 1000);
 
             const subscriptionData = {
                 packageName: pkg.name,
-                activatedAt: now.toISOString(),
-                expiresAt: expiresAt.toISOString(),
+                activatedAt: now.toISOString(), // Will be updated by admin
+                expiresAt: null, // Will be calculated by admin
                 dailyVideoLimit: pkg.dailyVideoLimit,
                 coinsPerVideo: pkg.coinsPerVideo,
                 videosWatchedToday: 0,
                 lastVideoWatchTime: null,
-                status: 'Pending' // Will be set to 'Active' by admin
+                status: 'Pending' // Default status after purchase
             };
 
             // Deduct balance
@@ -2480,6 +2557,8 @@
 
             updateDisplay();
             closeBuyVipModal();
+            // Reload user's subscriptions to reflect the new one
+            await loadUserVipSubscriptions();
             showMessageModal('Success', `Purchase request sent! Admin will activate your ${pkg.name} package soon.`);
         } catch (error) {
             console.error("Error buying VIP with balance:", error);
@@ -2540,6 +2619,137 @@
             showMessageModal('Error', 'Failed to submit request. Please try again.');
         }
     });
+
+    // === NEW: Watch VIP Video Function ===
+    async function watchVipVideo(packageId) {
+        if (!tgUser || !tgUser.id || !packageId) return;
+
+        const userSub = userVipSubscriptions[packageId];
+        if (!userSub || userSub.status !== 'Active') {
+            showMessageModal('Error', 'Your VIP subscription for this package is not active.');
+            return;
+        }
+
+        // Check if the 12-hour period has passed and reset if necessary
+        await checkAndResetVipCounter(packageId);
+
+        // Check if limit is reached
+        const now = new Date();
+        let isWithinPeriod = true;
+        if (userSub.lastVideoWatchTime) {
+            const timeDiff = now - new Date(userSub.lastVideoWatchTime);
+            const hoursDiff = timeDiff / (1000 * 60 * 60);
+            if (hoursDiff >= 12) {
+                isWithinPeriod = false;
+            }
+        }
+
+        // If within the 12-hour period, check the limit
+        if (isWithinPeriod && userSub.videosWatchedToday >= userSub.dailyVideoLimit) {
+            showMessageModal('Error', `You have reached your daily video limit of ${userSub.dailyVideoLimit} for this VIP package. Please wait for the timer to reset.`);
+            return;
+        }
+
+        // Check if the Monetag SDK function is available (use a specific zone for VIP ads if needed)
+        // For now, using the same as main ads
+        if (typeof show_9807992 === 'function') {
+            // Prevent double click by disabling the button immediately
+            const watchBtn = event.currentTarget; // Get the clicked watch button
+            if (watchBtn.classList.contains('disabled')) {
+                return; // Already processing
+            }
+            watchBtn.classList.add('disabled'); // Disable the button
+
+            show_9807992().then(async () => {
+                // Ad shown successfully (or user interacted)
+                // Grant reward based on the package
+                const coinsEarned = userSub.coinsPerVideo;
+                points += coinsEarned;
+                balance = (points / appConfig.coinsForConversion) * appConfig.valuePerConversion;
+                updateDisplay();
+                addToHistory('earn', `+${coinsEarned} Coin(s) from VIP Ad`);
+                saveUserData();
+                Telegram.WebApp.HapticFeedback.notificationOccurred('success');
+                showMessageModal('Success', `Congratulations! You've earned +${coinsEarned} coins from the VIP ad. Your new balance is $${balance.toFixed(2)}.`);
+
+                // Update VIP tracking data
+                await updateVipAdTracking(packageId);
+
+            }).catch((error) => {
+                // Handle errors, e.g., ad failed to load
+                console.error("VIP Ad could not be shown:", error);
+                showMessageModal('Error', "Sorry, the VIP ad could not be loaded. Please try again.");
+                // Re-enable the button on error
+                watchBtn.classList.remove('disabled');
+            });
+        } else {
+            // SDK not loaded or function not available
+            console.warn("Monetag SDK for VIP ads is not ready yet.");
+            showMessageModal('Warning', "Ad provider is not ready. Please try again in a moment.");
+        }
+    }
+
+    // Function to update VIP ad tracking data in Firebase
+    async function updateVipAdTracking(packageId) {
+        if (!tgUser || !tgUser.id || !packageId) return;
+        const now = new Date();
+        const userRef = database.ref('users/' + tgUser.id);
+
+        // Increment the videos watched today for this specific package
+        let localVideosWatchedToday = (userVipSubscriptions[packageId].videosWatchedToday || 0) + 1;
+
+        try {
+            // Update the specific package's subscription data
+            await userRef.child(`vipSubscriptions/${packageId}`).update({
+                videosWatchedToday: localVideosWatchedToday,
+                lastVideoWatchTime: now.toISOString()
+            });
+
+            console.log("VIP Ad tracking updated:", { packageId, localVideosWatchedToday, time: now.toISOString() });
+            // Update local state variables to reflect the change
+            if (userVipSubscriptions[packageId]) {
+                userVipSubscriptions[packageId].videosWatchedToday = localVideosWatchedToday;
+                userVipSubscriptions[packageId].lastVideoWatchTime = now.toISOString();
+            }
+            // Reload user subscriptions to reflect changes in UI (optional, can be optimized)
+            // loadUserVipSubscriptions(); // Not strictly needed if we update local state
+
+        } catch (error) {
+            console.error("Failed to update VIP ad tracking:", error);
+        }
+    }
+
+    // Function to check and reset VIP counter (12-hour basis per package)
+    async function checkAndResetVipCounter(packageId) {
+        if (!tgUser || !tgUser.id || !packageId) return;
+
+        const userSub = userVipSubscriptions[packageId];
+        if (!userSub) return; // Should not happen if called correctly
+
+        if (userSub.lastVideoWatchTime) {
+            const now = new Date();
+            const timeDiff = now - new Date(userSub.lastVideoWatchTime);
+            const hoursDiff = timeDiff / (1000 * 60 * 60);
+
+            if (hoursDiff >= 12) {
+                // Reset the counter
+                try {
+                    await database.ref(`users/${tgUser.id}/vipSubscriptions/${packageId}`).update({
+                        videosWatchedToday: 0,
+                        lastVideoWatchTime: now.toISOString() // Set new start time
+                    });
+                    console.log(`VIP counter for package ${packageId} reset after 12 hours.`);
+                    // Update local state
+                    userVipSubscriptions[packageId].videosWatchedToday = 0;
+                    userVipSubscriptions[packageId].lastVideoWatchTime = now.toISOString();
+                    // No need to reload all subscriptions for this single update
+                } catch (error) {
+                    console.error(`Failed to reset VIP counter for package ${packageId}:`, error);
+                }
+            }
+        }
+    }
+
 
     // Cleanup listener on unload
     window.addEventListener('beforeunload', () => {
