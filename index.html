@@ -9,6 +9,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.6.10/firebase-database-compat.js"></script>
   <style>
+    /* ... (সম্পূর্ণ আগের CSS অপরিবর্তিত রাখা হয়েছে) ... */
     /* Existing styles from your file */
     :root {
       /* -- Updated all colors to white theme -- */
@@ -37,8 +38,6 @@
       --dm-card-bg: #1E1E1E;
       --dm-error-color: #EF5350;
       --dm-border-color: rgba(255, 255, 255, 0.1);
-      /* New: Balance Card Background Color Variable */
-      --balance-card-bg: #00a651; /* Default color */
     }
     /* Light mode (default) */
     body.light-mode {
@@ -57,7 +56,6 @@
       --rejected-color: #dc3545;
       --requesting-color: #dc3545;
       --border-color: rgba(0, 0, 0, 0.1);
-      --balance-card-bg: #00a651; /* Default light mode color */
     }
     /* Dark mode */
     body.dark-mode {
@@ -76,7 +74,6 @@
       --rejected-color: #EF5350;
       --requesting-color: #EF5350;
       --border-color: var(--dm-border-color);
-      --balance-card-bg: #00753a; /* Default dark mode color */
     }
     * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body {
@@ -107,8 +104,7 @@
     .user-info .username { font-size: 18px; font-weight: 700; margin: 0; }
     .user-info .title { font-size: 14px; color: var(--text-muted-color); margin: 0; }
     .balance-card {
-      background: linear-gradient(135deg, var(--balance-card-bg), #00753a); /* Use the custom property */
-      border-radius: 16px; padding: 20px;
+      background: linear-gradient(135deg, #00a651, #00753a); border-radius: 16px; padding: 20px;
       text-align: center; margin-bottom: 25px;
     }
     .balance-card .label { font-size: 16px; opacity: 0.9; color: #ffffff; margin-bottom: 5px; }
@@ -530,53 +526,82 @@
         color: var(--text-muted-color);
         font-size: 14px; /* Increased font size */
     }
-    /* --- Inbox Modal Styles --- */
-    #inbox-modal .modal-content {
-        width: 95%;
-        max-width: 400px;
-        max-height: 80vh;
-        overflow-y: auto;
-        text-align: left;
-        padding: 20px;
+
+    /* === NEW: VIP Package Styles === */
+    .vip-package-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 15px;
+      border: 1px solid var(--border-color);
+      position: relative;
     }
-    #inbox-list {
-        max-height: 60vh;
-        overflow-y: auto;
-        margin-bottom: 15px;
+    .vip-package-card.inactive {
+      opacity: 0.6;
     }
-    .inbox-item {
-        background: var(--card-bg);
-        padding: 15px;
-        border-radius: 10px;
-        margin-bottom: 10px;
-        border: 1px solid var(--border-color);
-        display: flex;
-        flex-direction: column;
+    .vip-package-card .package-name {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 10px 0;
+      color: var(--primary-color);
     }
-    .inbox-item h4 {
-        margin: 0 0 5px 0;
-        font-size: 16px;
-        color: var(--primary-color); /* Use primary color for sender */
+    .vip-package-card .package-detail {
+      font-size: 14px;
+      margin: 3px 0;
+      color: var(--text-muted-color);
     }
-    .inbox-item p {
-        margin: 0 0 5px 0;
-        font-size: 14px;
-        color: var(--text-color);
+    .vip-package-card .package-price {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--accent-color);
+      margin: 10px 0;
     }
-    .inbox-item small {
-        color: var(--text-muted-color);
-        font-size: 12px;
+    .vip-package-card .buy-button {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: none;
+      background: var(--primary-color);
+      color: #000;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 10px;
     }
-    .inbox-item.unread {
-        border-left: 4px solid var(--primary-color); /* Highlight unread messages */
+    .vip-package-card .buy-button:hover {
+      background: var(--primary-hover);
     }
-    .inbox-item.sent {
-        background: var(--secondary-color); /* Slightly different background for sent messages */
+    .vip-package-card .buy-button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
     }
-    .inbox-item.sent h4, .inbox-item.sent p {
-        color: var(--text-color);
+
+    /* === NEW: Deposit Form Modal === */
+    #deposit-form-modal .modal-content {
+      width: 95%;
+      max-width: 400px;
+      text-align: left;
     }
-    /* --- End Inbox Modal Styles --- */
+    #deposit-instructions {
+      background: #f8f9fa;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 14px;
+      color: var(--text-color);
+    }
+    #copy-number-btn {
+      margin-left: 8px;
+      padding: 4px 8px;
+      font-size: 12px;
+      background: var(--primary-color);
+      color: #000;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #deposit-form .form-group {
+      margin-bottom: 12px;
+    }
   </style>
   <!-- Monetag SDK Scripts -->
   <script src='//libtl.com/sdk.js' data-zone='9807992' data-sdk='show_9807992'></script>
@@ -636,7 +661,23 @@
             <div class="task-details"><h3>Withdraw Funds</h3><p>Request to withdraw your available balance.</p></div>
             <div class="task-arrow"><i class="fa-solid fa-chevron-right"></i></div>
         </div>
+        <!-- === NEW: VIP Package Card on Home === -->
+        <div class="task-card" onclick="showView('vip-packages-view')">
+            <div class="task-icon"><i class="fa-solid fa-crown"></i></div>
+            <div class="task-details"><h3>VIP Package</h3><p>Unlock premium earning power with VIP.</p></div>
+            <div class="task-arrow"><i class="fa-solid fa-chevron-right"></i></div>
+        </div>
       </div>
+
+      <!-- === NEW: VIP PACKAGES VIEW === -->
+      <div id="vip-packages-view" class="view">
+        <h2 class="section-title">VIP Packages</h2>
+        <div id="vip-packages-list">
+          <!-- Packages loaded from Firebase -->
+          <div class="loading">Loading VIP packages...</div>
+        </div>
+      </div>
+
       <!-- TASKS VIEW -->
       <div id="tasks-view" class="view">
         <h2 class="section-title">Earning Tasks</h2>
@@ -781,8 +822,8 @@
             <!-- Notifications will be populated here -->
         </div>
         <div class="notification-actions">
-            <button class="admin-support-btn" onclick="openInboxModal()"> <!-- Changed from openAdminMessageModal -->
-                <i class="fa-solid fa-envelope"></i> Inbox
+            <button class="admin-support-btn" onclick="openAdminMessageModal()">
+                <i class="fa-solid fa-headset"></i> Support Admin
             </button>
             <button class="important-notices-btn" onclick="openImportantNoticesModal()">
                 <i class="fa-solid fa-exclamation-circle"></i> Important Notices
@@ -793,19 +834,19 @@
         </div>
     </div>
   </div>
-  <!-- Inbox Modal (Replaces old Admin Message Modal) -->
-  <div class="modal-overlay" id="inbox-modal">
+  <!-- Admin Message Modal -->
+  <div class="modal-overlay" id="admin-message-modal">
     <div class="modal-content">
-        <h3>Inbox</h3>
-        <div id="inbox-list">
-            <!-- Inbox messages will be populated here -->
+        <h3>Support Admin</h3>
+        <div id="admin-message-history">
+            <!-- Message history will be populated here -->
         </div>
         <div style="display: flex; align-items: center;">
-            <input type="text" id="inbox-message-input" placeholder="Type your message to admin...">
-            <button id="send-inbox-message"><i class="fa-solid fa-paper-plane"></i></button>
+            <input type="text" id="admin-message-input" placeholder="Type your message...">
+            <button id="send-admin-message"><i class="fa-solid fa-paper-plane"></i></button>
         </div>
         <div class="modal-actions" style="margin-top: 20px;">
-            <button class="action-button primary-button" onclick="closeInboxModal()">Close</button>
+            <button class="action-button primary-button" onclick="closeAdminMessageModal()">Close</button>
         </div>
     </div>
   </div>
@@ -821,6 +862,52 @@
         </div>
     </div>
   </div>
+
+  <!-- === NEW: Buy VIP Modal === -->
+  <div class="modal-overlay" id="buy-vip-modal">
+    <div class="modal-content">
+      <h3 id="buy-vip-title">Buy Package</h3>
+      <p id="buy-vip-message">Choose how to proceed:</p>
+      <div class="modal-actions">
+        <button class="action-button primary-button" id="buy-with-balance-btn">Buy with Balance</button>
+        <button class="action-button secondary-button" id="deposit-and-buy-btn">Deposit & Buy</button>
+      </div>
+      <div class="modal-actions" style="margin-top: 10px;">
+        <button class="action-button" onclick="closeBuyVipModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- === NEW: Deposit Form Modal === -->
+  <div class="modal-overlay" id="deposit-form-modal">
+    <div class="modal-content">
+      <h3>Deposit to Buy</h3>
+      <div id="deposit-instructions">
+        Please send money to: <strong>01814892156</strong>
+        <button id="copy-number-btn" onclick="copyDepositNumber()">Copy</button>
+      </div>
+      <form id="deposit-form">
+        <div class="form-group">
+          <label>Your Mobile Number</label>
+          <input type="tel" id="deposit-mobile" class="form-control" placeholder="01XXXXXXXXX" required>
+        </div>
+        <div class="form-group">
+          <label>Transaction ID</label>
+          <input type="text" id="deposit-txn-id" class="form-control" placeholder="e.g. TXN123456" required>
+        </div>
+        <div class="form-group">
+          <label>Amount (BDT)</label>
+          <input type="number" id="deposit-amount" class="form-control" placeholder="e.g. 300" min="10" required>
+        </div>
+        <input type="hidden" id="deposit-package-id">
+        <button type="submit" class="action-button primary-button">Submit Request</button>
+      </form>
+      <div class="modal-actions" style="margin-top: 10px;">
+        <button class="action-button" onclick="closeDepositFormModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
 <script>
     // --- Theme Toggle Logic ---
     document.addEventListener('DOMContentLoaded', () => {
@@ -878,8 +965,7 @@
       referralClaimThreshold: 200, // Default value
       minWithdrawAmount: 5, // Default value
       dailyAdLimitPerUser: 10, // Default daily ad limit
-      isAdSystemActive: true, // Default ad system status
-      balanceCardColor: "#00a651" // New: Default balance card color
+      isAdSystemActive: true // Default ad system status
     };
     let referralData = {
       referralCount: 0,
@@ -891,12 +977,16 @@
     let userPointsBalanceListener = null;
     let referralListener = null;
     let appConfigListener = null; // New listener for appConfig
-    let inboxListener = null; // New listener for inbox
     // Ad tracking variables
     let adsWatchedToday = 0;
     let lastAdWatchTime = null; // Will be a Date object or null
     let adStatus = 'Active'; // User-specific ad status, default 'Active'
     let resetTimerInterval = null;
+
+    // === NEW: VIP State ===
+    let vipPackages = [];
+    let currentSelectedPackage = null;
+
     // --- Updated Balance Logic ---
     // Dynamic from Firebase: 1000 coins = 30 cents = $0.30 USD
     // 1 coin = $0.0003 USD (calculated dynamically)
@@ -915,8 +1005,9 @@
                         loadTelegramUser();
                         renderLeaderboard();
                         checkForReferral(); // Check if this user was referred
+                        loadVipPackages(); // Load VIP packages
                     }).catch(error => {
-                        console.error("Error loading user data:", error);
+                        console.error("Error loading user ", error);
                         // Handle error appropriately, maybe show a message
                     });
                 });
@@ -930,8 +1021,9 @@
                     renderLeaderboard();
                     checkForReferral(); // Check if this user was referred
                     startResetTimer(); // Start the 12-hour reset timer logic
+                    loadVipPackages(); // Load VIP packages
                 }).catch(error => {
-                    console.error("Error loading user data:", error);
+                    console.error("Error loading user ", error);
                     // Handle error appropriately
                 });
             }).catch(error => {
@@ -958,11 +1050,8 @@
                     referralClaimThreshold: config.referralClaimThreshold !== undefined ? config.referralClaimThreshold : 200,
                     minWithdrawAmount: config.minWithdrawAmount !== undefined ? config.minWithdrawAmount : 5,
                     dailyAdLimitPerUser: config.dailyAdLimitPerUser !== undefined ? config.dailyAdLimitPerUser : 10,
-                    isAdSystemActive: config.isAdSystemActive !== undefined ? config.isAdSystemActive : true,
-                    balanceCardColor: config.balanceCardColor || "#00a651" // Load balance card color
+                    isAdSystemActive: config.isAdSystemActive !== undefined ? config.isAdSystemActive : true
                 };
-                // Apply the loaded color immediately
-                updateBalanceCardColor(appConfig.balanceCardColor);
             }
         } catch (error) {
             console.error("Failed to load app config:", error);
@@ -1057,7 +1146,7 @@
             startResetTimer();
             // --- End New ---
         } catch (error) {
-            console.error("Failed to load user data:", error);
+            console.error("Failed to load user ", error);
             throw error;
         }
     }
@@ -1326,7 +1415,6 @@
             if (config) {
                 const oldLimit = appConfig.dailyAdLimitPerUser;
                 const oldStatus = appConfig.isAdSystemActive;
-                const oldColor = appConfig.balanceCardColor; // Store old color
                 appConfig = {
                     pointsPerAd: config.pointsPerAd || 10,
                     coinsForConversion: config.coinsForConversion || 1000,
@@ -1335,14 +1423,9 @@
                     referralClaimThreshold: config.referralClaimThreshold !== undefined ? config.referralClaimThreshold : 200,
                     minWithdrawAmount: config.minWithdrawAmount !== undefined ? config.minWithdrawAmount : 5,
                     dailyAdLimitPerUser: config.dailyAdLimitPerUser !== undefined ? config.dailyAdLimitPerUser : 10,
-                    isAdSystemActive: config.isAdSystemActive !== undefined ? config.isAdSystemActive : true,
-                    balanceCardColor: config.balanceCardColor || "#00a651" // Load balance card color
+                    isAdSystemActive: config.isAdSystemActive !== undefined ? config.isAdSystemActive : true
                 };
                 console.log("App config updated:", appConfig);
-                // Check if balance card color changed
-                if (oldColor !== appConfig.balanceCardColor) {
-                    updateBalanceCardColor(appConfig.balanceCardColor);
-                }
                 updateDisplay();
                 updateAdButtonStates(); // Update button states when global config changes
                 // If the limit or global status changed, we might need to update UI state
@@ -1352,26 +1435,6 @@
             }
         });
     }
-
-    // Function to update balance card color
-    function updateBalanceCardColor(newColor) {
-        document.documentElement.style.setProperty('--balance-card-bg', newColor);
-        console.log("Balance card color updated to:", newColor);
-    }
-
-    // Setup listener for inbox messages
-    function setupInboxListener(userRef) {
-        if (inboxListener) {
-            // Remove previous listener if exists
-            userRef.child('inbox').off('value', inboxListener);
-        }
-        // Set up new listener
-        inboxListener = userRef.child('inbox').on('value', (snapshot) => {
-            const messages = snapshot.val();
-            renderInboxMessages(messages);
-        });
-    }
-
     // Claim referral earnings (convert to main balance)
     async function claimReferralEarnings() {
         if (!tgUser || !tgUser.id) return;
@@ -1425,7 +1488,7 @@
                 historyLog: historyLog
             });
         } catch (error) {
-            console.error("Failed to save user data:", error);
+            console.error("Failed to save user ", error);
         }
     }
     // --- View Management ---
@@ -1441,6 +1504,12 @@
         const activeBtn = document.querySelector(`.nav-button[onclick="showView('${viewId}')"]`);
         if(activeBtn) activeBtn.classList.add('active');
         if (viewId === 'history-view') renderHistory();
+        // === NEW: Load VIP packages if needed ===
+        if (viewId === 'vip-packages-view') {
+            if (vipPackages.length === 0) {
+                loadVipPackages();
+            }
+        }
     }
     function showBlockedView() {
         isBlocked = true;
@@ -2147,137 +2216,117 @@
     function closeNotificationModal() {
         document.getElementById('notification-modal').classList.remove('active');
     }
-
-    // --- Inbox Modal Logic ---
-    function openInboxModal() {
+    // --- Admin Message Modal Logic ---
+    let adminMessagesListener = null;
+    function openAdminMessageModal() {
         closeNotificationModal(); // Close notification modal first
         if (isBlocked) {
             showBlockedView();
             return;
         }
-        const list = document.getElementById('inbox-list');
-        list.innerHTML = '<p style="text-align: center; color: var(--text-muted-color);">Loading messages...</p>';
-        document.getElementById('inbox-message-input').value = '';
-        document.getElementById('inbox-modal').classList.add('active');
+        const historyDiv = document.getElementById('admin-message-history');
+        // --- Update: Loading message style ---
+        historyDiv.innerHTML = '<p style="text-align: center; color: var(--text-muted-color); margin: auto;">Loading messages...</p>';
+        // --- End Update ---
+        document.getElementById('admin-message-input').value = '';
+        document.getElementById('admin-message-modal').classList.add('active');
         // Load message history from Firebase
-        loadInboxMessages();
+        loadAdminMessageHistory();
         // Setup real-time listener for new messages
-        if (tgUser && tgUser.id) {
-            const userRef = database.ref('users/' + tgUser.id);
-            setupInboxListener(userRef);
-        }
+        setupAdminMessagesListener();
     }
-    function closeInboxModal() {
-        document.getElementById('inbox-modal').classList.remove('active');
+    function closeAdminMessageModal() {
+        document.getElementById('admin-message-modal').classList.remove('active');
         // Remove listener when closing
-        if (inboxListener && tgUser && tgUser.id) {
+        if (adminMessagesListener && tgUser && tgUser.id) {
             const userRef = database.ref('users/' + tgUser.id);
-            userRef.child('inbox').off('value', inboxListener);
-            inboxListener = null;
+            userRef.child('adminMessages').off('value', adminMessagesListener);
+            adminMessagesListener = null;
         }
     }
-    function loadInboxMessages() {
+    function loadAdminMessageHistory() {
         if (!tgUser || !tgUser.id) return;
-        const userRef = database.ref('users/' + tgUser.id + '/inbox');
+        const userRef = database.ref('users/' + tgUser.id + '/adminMessages');
         userRef.once('value').then((snapshot) => {
             const messages = snapshot.val();
-            renderInboxMessages(messages);
+            renderAdminMessageHistory(messages);
         }).catch((error) => {
-            console.error("Error loading inbox messages:", error);
-            document.getElementById('inbox-list').innerHTML = '<p style="text-align: center; color: var(--error-color);">Failed to load messages.</p>';
+            console.error("Error loading admin messages:", error);
+            document.getElementById('admin-message-history').innerHTML = '<p style="text-align: center; color: var(--error-color);">Failed to load messages.</p>';
         });
     }
-    function renderInboxMessages(messagesData) {
-        const list = document.getElementById('inbox-list');
+    // --- Update: renderAdminMessageHistory function ---
+    function renderAdminMessageHistory(messagesData) {
+        const historyDiv = document.getElementById('admin-message-history');
         // Clear previous content
-        list.innerHTML = '';
+        historyDiv.innerHTML = '';
         if (!messagesData) {
             // Add "No messages" message if history is empty
             const noMsgElement = document.createElement('p');
             noMsgElement.style.textAlign = 'center';
             noMsgElement.style.color = 'var(--text-muted-color)';
-            noMsgElement.textContent = 'No messages yet.';
-            list.appendChild(noMsgElement);
+            noMsgElement.style.margin = 'auto'; // Center vertically if needed
+            noMsgElement.textContent = 'No messages yet. Start a conversation!';
+            historyDiv.appendChild(noMsgElement);
             return;
         }
         const messages = Object.values(messagesData);
         // Sort messages by timestamp (oldest first)
         messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-
-        // Group messages by sender and direction (admin/user)
-        const groupedMessages = {};
+        // Create and append message elements
         messages.forEach(msg => {
-            const sender = msg.sender || 'admin'; // Assume admin if no sender field
-            if (!groupedMessages[sender]) {
-                groupedMessages[sender] = [];
-            }
-            groupedMessages[sender].push(msg);
+            const isUser = msg.sender === 'user';
+            const bubbleClass = isUser ? 'user-message' : 'admin-message';
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message-bubble ${bubbleClass}`;
+            // Add message text and timestamp
+            messageDiv.innerHTML = `
+                ${msg.text}
+                <br><small>${new Date(msg.timestamp).toLocaleTimeString()}</small>
+            `;
+            historyDiv.appendChild(messageDiv);
         });
-
-        // Render grouped messages
-        Object.entries(groupedMessages).forEach(([sender, msgList]) => {
-            msgList.forEach(msg => {
-                const isUser = msg.sender === 'user';
-                const itemClass = `inbox-item ${isUser ? 'sent' : 'received'} ${msg.read ? '' : 'unread'}`;
-                const senderLabel = isUser ? 'You' : 'Admin';
-                const messageDiv = document.createElement('div');
-                messageDiv.className = itemClass;
-                messageDiv.innerHTML = `
-                    <h4>${senderLabel}</h4>
-                    <p>${msg.text}</p>
-                    <small>${new Date(msg.timestamp).toLocaleString()}</small>
-                `;
-                list.appendChild(messageDiv);
-            });
-        });
-
-        // Mark messages as read if modal is opened
-        if (messages.length > 0 && tgUser && tgUser.id) {
-            const userRef = database.ref('users/' + tgUser.id + '/inbox');
-            const updates = {};
-            messages.forEach(msg => {
-                if (!msg.read) {
-                    updates[msg.id + '/read'] = true; // Assuming each message has an 'id' or key
-                }
-            });
-            if (Object.keys(updates).length > 0) {
-                userRef.update(updates).then(() => {
-                    console.log("Messages marked as read");
-                }).catch(error => {
-                    console.error("Error marking messages as read:", error);
-                });
-            }
-        }
+        // Scroll to bottom after adding messages
+        historyDiv.scrollTop = historyDiv.scrollHeight;
     }
-
-    document.getElementById('send-inbox-message').addEventListener('click', sendInboxMessage);
-    document.getElementById('inbox-message-input').addEventListener('keypress', function(e) {
+    // --- End Update ---
+    function setupAdminMessagesListener() {
+        if (!tgUser || !tgUser.id) return;
+        const userRef = database.ref('users/' + tgUser.id);
+        // Remove previous listener if exists
+        if (adminMessagesListener) {
+            userRef.child('adminMessages').off('value', adminMessagesListener);
+        }
+        // Set up new listener
+        adminMessagesListener = userRef.child('adminMessages').on('value', (snapshot) => {
+            const messages = snapshot.val();
+            renderAdminMessageHistory(messages);
+        });
+    }
+    document.getElementById('send-admin-message').addEventListener('click', sendAdminMessage);
+    document.getElementById('admin-message-input').addEventListener('keypress', function(e) {
         if (e.key === 'Enter') {
-            sendInboxMessage();
+            sendAdminMessage();
         }
     });
-
-    function sendInboxMessage() {
-        const input = document.getElementById('inbox-message-input');
+    function sendAdminMessage() {
+        const input = document.getElementById('admin-message-input');
         const messageText = input.value.trim();
         if (!messageText) return;
         if (!tgUser || !tgUser.id) {
             showMessageModal('Error', 'User data not available.');
             return;
         }
-
         const messageData = {
             sender: 'user',
             text: messageText,
-            timestamp: new Date().toISOString(),
-            read: false // New user messages are not read by admin yet
+            timestamp: new Date().toISOString()
         };
-
-        // Push message to Firebase under 'inbox'
-        const userRef = database.ref('users/' + tgUser.id + '/inbox');
+        // Push message to Firebase
+        const userRef = database.ref('users/' + tgUser.id + '/adminMessages');
         userRef.push(messageData)
             .then(() => {
-                console.log("Message sent to inbox");
+                console.log("Message sent to Firebase");
                 input.value = ''; // Clear input
                 // The UI will update automatically via the listener
             })
@@ -2286,8 +2335,6 @@
                 showMessageModal('Error', 'Failed to send message. Please try again.');
             });
     }
-    // --- End Inbox Modal Logic ---
-
     // --- Important Notices Modal Logic ---
     function openImportantNoticesModal() {
         closeNotificationModal(); // Close notification modal first
@@ -2332,6 +2379,168 @@
             </div>
         `).join('');
     }
+
+    // === NEW: VIP Package Functions ===
+
+    async function loadVipPackages() {
+        try {
+            const snapshot = await database.ref('vipPackages').once('value');
+            const packages = snapshot.val();
+            vipPackages = packages ? Object.entries(packages).map(([id, data]) => ({ id, ...data })) : [];
+            renderVipPackages();
+        } catch (error) {
+            console.error("Failed to load VIP packages:", error);
+            document.getElementById('vip-packages-list').innerHTML = '<p class="error-message">Failed to load packages.</p>';
+        }
+    }
+
+    function renderVipPackages() {
+        const container = document.getElementById('vip-packages-list');
+        if (vipPackages.length === 0) {
+            container.innerHTML = '<p style="text-align:center; color:var(--text-muted-color);">No VIP packages available.</p>';
+            return;
+        }
+
+        container.innerHTML = vipPackages.map(pkg => {
+            const isActive = pkg.status === 'Active';
+            return `
+                <div class="vip-package-card ${!isActive ? 'inactive' : ''}">
+                    <h3 class="package-name">${pkg.name}</h3>
+                    <div class="package-detail">Duration: ${pkg.durationDays} days</div>
+                    <div class="package-detail">Daily Video Limit: ${pkg.dailyVideoLimit}</div>
+                    <div class="package-detail">Coins per Video: ${pkg.coinsPerVideo}</div>
+                    <div class="package-price">$${pkg.price.toFixed(2)}</div>
+                    <button class="buy-button" ${!isActive ? 'disabled' : ''} onclick="selectVipPackage('${pkg.id}')">
+                        ${isActive ? 'Buy Now' : 'Inactive'}
+                    </button>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function selectVipPackage(packageId) {
+        const pkg = vipPackages.find(p => p.id === packageId);
+        if (!pkg) return;
+
+        currentSelectedPackage = pkg;
+        const modal = document.getElementById('buy-vip-modal');
+        document.getElementById('buy-vip-title').textContent = `Buy ${pkg.name}`;
+        document.getElementById('buy-vip-message').textContent = `Price: $${pkg.price.toFixed(2)}`;
+
+        if (balance >= pkg.price) {
+            document.getElementById('buy-with-balance-btn').style.display = 'block';
+        } else {
+            document.getElementById('buy-with-balance-btn').style.display = 'none';
+        }
+
+        modal.classList.add('active');
+    }
+
+    function closeBuyVipModal() {
+        document.getElementById('buy-vip-modal').classList.remove('active');
+        currentSelectedPackage = null;
+    }
+
+    document.getElementById('buy-with-balance-btn').addEventListener('click', async () => {
+        if (!currentSelectedPackage || !tgUser) return;
+
+        const pkg = currentSelectedPackage;
+        if (balance < pkg.price) {
+            showMessageModal('Error', 'Insufficient balance.');
+            return;
+        }
+
+        try {
+            const userRef = database.ref('users/' + tgUser.id);
+            const now = new Date();
+            const expiresAt = new Date(now.getTime() + pkg.durationDays * 24 * 60 * 60 * 1000);
+
+            const subscriptionData = {
+                packageName: pkg.name,
+                activatedAt: now.toISOString(),
+                expiresAt: expiresAt.toISOString(),
+                dailyVideoLimit: pkg.dailyVideoLimit,
+                coinsPerVideo: pkg.coinsPerVideo,
+                videosWatchedToday: 0,
+                lastVideoWatchTime: null,
+                status: 'Pending' // Will be set to 'Active' by admin
+            };
+
+            // Deduct balance
+            balance -= pkg.price;
+            points = Math.round((balance / appConfig.valuePerConversion) * appConfig.coinsForConversion);
+
+            // Save subscription and balance
+            await userRef.update({
+                balance: balance,
+                points: points
+            });
+
+            await userRef.child('vipSubscriptions').child(pkg.id).set(subscriptionData);
+
+            updateDisplay();
+            closeBuyVipModal();
+            showMessageModal('Success', `Purchase request sent! Admin will activate your ${pkg.name} package soon.`);
+        } catch (error) {
+            console.error("Error buying VIP with balance:", error);
+            showMessageModal('Error', 'Failed to purchase. Please try again.');
+        }
+    });
+
+    document.getElementById('deposit-and-buy-btn').addEventListener('click', () => {
+        if (!currentSelectedPackage) return;
+        document.getElementById('deposit-package-id').value = currentSelectedPackage.id;
+        closeBuyVipModal();
+        document.getElementById('deposit-form-modal').classList.add('active');
+    });
+
+    function closeDepositFormModal() {
+        document.getElementById('deposit-form-modal').classList.remove('active');
+        document.getElementById('deposit-form').reset();
+    }
+
+    function copyDepositNumber() {
+        const text = "01814892156";
+        navigator.clipboard.writeText(text).then(() => {
+            showMessageModal('Copied', 'Number copied to clipboard!');
+        });
+    }
+
+    document.getElementById('deposit-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!tgUser) return;
+
+        const mobile = document.getElementById('deposit-mobile').value.trim();
+        const txnId = document.getElementById('deposit-txn-id').value.trim();
+        const amount = parseFloat(document.getElementById('deposit-amount').value);
+        const pkgId = document.getElementById('deposit-package-id').value;
+
+        if (!mobile || !txnId || isNaN(amount) || amount <= 0) {
+            showMessageModal('Error', 'Please fill all fields correctly.');
+            return;
+        }
+
+        try {
+            const depositRequest = {
+                userId: tgUser.id,
+                username: tgUser.username || 'Unknown',
+                mobileNumber: mobile,
+                transactionId: txnId,
+                amountBDT: amount,
+                forPackageId: pkgId,
+                status: 'Pending',
+                timestamp: new Date().toISOString()
+            };
+
+            await database.ref('depositRequests').push(depositRequest);
+            closeDepositFormModal();
+            showMessageModal('Success', 'Deposit request submitted! Admin will review it shortly.');
+        } catch (error) {
+            console.error("Error submitting deposit request:", error);
+            showMessageModal('Error', 'Failed to submit request. Please try again.');
+        }
+    });
+
     // Cleanup listener on unload
     window.addEventListener('beforeunload', () => {
         if (userBlockedListener && tgUser && tgUser.id) {
@@ -2354,10 +2563,10 @@
          if (appConfigListener) {
             database.ref('appConfig').off('value', appConfigListener);
         }
-         if (inboxListener && tgUser && tgUser.id) {
+        if (adminMessagesListener && tgUser && tgUser.id) {
             const userRef = database.ref('users/' + tgUser.id);
-            userRef.child('inbox').off('value', inboxListener);
-            inboxListener = null;
+            userRef.child('adminMessages').off('value', adminMessagesListener);
+            adminMessagesListener = null;
         }
         if (resetTimerInterval) {
             clearInterval(resetTimerInterval);
