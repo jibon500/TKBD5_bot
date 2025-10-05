@@ -1022,6 +1022,7 @@
     let vipPackages = [];
     let currentSelectedPackage = null;
     let userVipSubscriptions = {}; // To store user's active/pending subscriptions
+    let vipUpdateInterval = null; // For background updates
 
     // --- Updated Balance Logic ---
     // Dynamic from Firebase: 1000 coins = 30 cents = $0.30 USD
@@ -1043,6 +1044,7 @@
                         checkForReferral(); // Check if this user was referred
                         loadVipPackages(); // Load VIP packages
                         loadUserVipSubscriptions(); // Load user's VIP subscriptions
+                        startVipUpdateInterval(); // Start background update for VIP data
                     }).catch(error => {
                         console.error("Error loading user ", error);
                         // Handle error appropriately, maybe show a message
@@ -1060,6 +1062,7 @@
                     startResetTimer(); // Start the 12-hour reset timer logic
                     loadVipPackages(); // Load VIP packages
                     loadUserVipSubscriptions(); // Load user's VIP subscriptions
+                    startVipUpdateInterval(); // Start background update for VIP data
                 }).catch(error => {
                     console.error("Error loading user ", error);
                     // Handle error appropriately
@@ -2460,6 +2463,8 @@
             const userSubscription = userVipSubscriptions[pkg.id];
             let buttonHtml = '';
             let statusBadgeHtml = '';
+            let adCounterHtml = '';
+            let lastAdTimeHtml = '';
 
             if (userSubscription) {
                 const subStatus = userSubscription.status;
@@ -2467,6 +2472,12 @@
 
                 if (subStatus === 'Active') {
                     buttonHtml = `<button class="watch-button" onclick="watchVipVideo('${pkg.id}')">Watch Video Now</button>`;
+                    // Add ad counter and last ad time for active packages
+                    const watchedToday = userSubscription.videosWatchedToday || 0;
+                    const limit = userSubscription.dailyVideoLimit;
+                    adCounterHtml = `<div class="package-detail">Today's Ads: ${watchedToday}/${limit}</div>`;
+                    const lastWatchTime = userSubscription.lastVideoWatchTime ? new Date(userSubscription.lastVideoWatchTime).toLocaleTimeString() : 'N/A';
+                    lastAdTimeHtml = `<div class="package-detail">Last Ad Time: ${lastWatchTime}</div>`;
                 } else if (subStatus === 'Pending') {
                     buttonHtml = `<button class="buy-button" disabled>Pending...</button>`;
                 } else {
@@ -2489,6 +2500,8 @@
                     <div class="package-detail">Duration: ${pkg.durationDays} days</div>
                     <div class="package-detail">Daily Video Limit: ${pkg.dailyVideoLimit}</div>
                     <div class="package-detail">Coins per Video: ${pkg.coinsPerVideo}</div>
+                    ${adCounterHtml} <!-- Added Ad Counter -->
+                    ${lastAdTimeHtml} <!-- Added Last Ad Time -->
                     <div class="package-price">$${pkg.price.toFixed(2)}</div>
                     ${buttonHtml}
                 </div>
@@ -2717,6 +2730,7 @@
             }
             // Reload user subscriptions to reflect changes in UI (optional, can be optimized)
             // loadUserVipSubscriptions(); // Not strictly needed if we update local state
+            renderVipPackages(); // Update the UI immediately to show new count/time
 
         } catch (error) {
             console.error("Failed to update VIP ad tracking:", error);
@@ -2747,6 +2761,7 @@
                     userVipSubscriptions[packageId].videosWatchedToday = 0;
                     userVipSubscriptions[packageId].lastVideoWatchTime = now.toISOString();
                     // No need to reload all subscriptions for this single update
+                    renderVipPackages(); // Update the UI immediately to show reset
                 } catch (error) {
                     console.error(`Failed to reset VIP counter for package ${packageId}:`, error);
                 }
@@ -2754,6 +2769,20 @@
         }
     }
 
+    // === NEW: Background Update for VIP Data ===
+    function startVipUpdateInterval() {
+        if (vipUpdateInterval) {
+            clearInterval(vipUpdateInterval);
+        }
+        vipUpdateInterval = setInterval(() => {
+            // This function runs every second in the background
+            // It updates the VIP package display if the user is on the VIP view
+            if (document.getElementById('vip-packages-view').classList.contains('active')) {
+                // Only render if the view is active to avoid unnecessary DOM updates
+                renderVipPackages();
+            }
+        }, 1000); // Update every 1000ms (1 second)
+    }
 
     // Cleanup listener on unload
     window.addEventListener('beforeunload', () => {
@@ -2784,6 +2813,10 @@
         }
         if (resetTimerInterval) {
             clearInterval(resetTimerInterval);
+        }
+        // === NEW: Clear VIP Update Interval ===
+        if (vipUpdateInterval) {
+            clearInterval(vipUpdateInterval);
         }
     });
 </script>
