@@ -620,15 +620,12 @@
       text-align: left;
     }
     #deposit-instructions {
-      background: #f8f9fa; /* Default background */
+      background: #f8f9fa;
       padding: 12px;
       border-radius: 8px;
       margin-bottom: 15px;
       font-size: 14px;
-      color: var(--text-color); /* Default text color */
-    }
-    #deposit-instructions .number {
-      color: var(--accent-color); /* Default number color */
+      color: var(--text-color);
     }
     #copy-number-btn {
       margin-left: 8px;
@@ -1201,7 +1198,7 @@
             startResetTimer();
             // --- End New ---
         } catch (error) {
-            console.error("Failed to load user data:", error);
+            console.error("Failed to load user ", error);
             throw error;
         }
     }
@@ -2543,6 +2540,7 @@
             let statusBadgeHtml = '';
             let adCounterHtml = '';
             let lastAdTimeHtml = '';
+            let timerHtml = '';
             if (userSubscription) {
                 const subStatus = userSubscription.status;
                 statusBadgeHtml = `<div class="status-badge status-${subStatus.toLowerCase()}">${subStatus}</div>`;
@@ -2554,6 +2552,19 @@
                     adCounterHtml = `<div class="package-detail">Today's Ads: ${watchedToday}/${limit}</div>`;
                     const lastWatchTime = userSubscription.lastVideoWatchTime ? new Date(userSubscription.lastVideoWatchTime).toLocaleTimeString() : 'N/A';
                     lastAdTimeHtml = `<div class="package-detail">Last Ad Time: ${lastWatchTime}</div>`;
+                    // Add timer display
+                    const resetTime = userSubscription.lastResetTime || userSubscription.activatedAt;
+                    const nextResetTime = new Date(new Date(resetTime).getTime() + 12 * 60 * 60 * 1000); // 12 hours after last reset
+                    const now = new Date();
+                    let timeUntilReset = 0;
+                    if (now < nextResetTime) {
+                        timeUntilReset = nextResetTime - now;
+                    }
+                    const hours = Math.floor(timeUntilReset / (1000 * 60 * 60));
+                    const minutes = Math.floor((timeUntilReset % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((timeUntilReset % (1000 * 60)) / 1000);
+                    const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    timerHtml = `<div class="package-detail">Reset In: ${timeStr}</div>`;
                 } else if (subStatus === 'Pending') {
                     buttonHtml = `<button class="buy-button" disabled>Pending...</button>`;
                 } else {
@@ -2574,6 +2585,7 @@
                 <div class="vip-package-card ${!isActive ? 'inactive' : ''}">
                     ${statusBadgeHtml}
                     <h3 class="package-name">${pkg.name}</h3>
+                    ${timerHtml} <!-- Timer display for active packages -->
                     <div class="package-detail">Duration: ${pkg.durationDays} days</div>
                     <div class="package-detail">Daily Video Limit: ${pkg.dailyVideoLimit}</div>
                     <div class="package-detail">Coins per Video: ${pkg.coinsPerVideo}</div>
@@ -2627,6 +2639,7 @@
                 coinsPerVideo: pkg.coinsPerVideo,
                 videosWatchedToday: 0,
                 lastVideoWatchTime: null,
+                lastResetTime: now.toISOString(), // Initially set to activated time
                 status: 'Pending' // Default status after purchase
             };
             // Deduct balance
@@ -2796,21 +2809,25 @@
         if (!tgUser || !tgUser.id || !packageId) return;
         const userSub = userVipSubscriptions[packageId];
         if (!userSub) return; // Should not happen if called correctly
-        if (userSub.lastVideoWatchTime) {
+        if (userSub.activatedAt) {
             const now = new Date();
-            const timeDiff = now - new Date(userSub.lastVideoWatchTime);
-            const hoursDiff = timeDiff / (1000 * 60 * 60);
-            if (hoursDiff >= 12) {
-                // Reset the counter
+            // Calculate the time of the next expected reset based on activatedAt and lastResetTime
+            const activatedTime = new Date(userSub.activatedAt);
+            const lastResetTime = new Date(userSub.lastResetTime || userSub.activatedAt);
+            // Calculate the time difference from the last reset
+            const timeSinceLastReset = now - lastResetTime;
+            // If 12 hours have passed since the last reset, reset the counter
+            if (timeSinceLastReset >= 12 * 60 * 60 * 1000) { // 12 hours in milliseconds
                 try {
+                    const newLastResetTime = new Date(lastResetTime.getTime() + 12 * 60 * 60 * 1000);
                     await database.ref(`users/${tgUser.id}/vipSubscriptions/${packageId}`).update({
                         videosWatchedToday: 0,
-                        lastVideoWatchTime: now.toISOString() // Set new start time
+                        lastResetTime: newLastResetTime.toISOString() // Set new reset time
                     });
-                    console.log(`VIP counter for package ${packageId} reset after 12 hours.`);
+                    console.log(`VIP counter for package ${packageId} reset at ${newLastResetTime.toISOString()}.`);
                     // Update local state
                     userVipSubscriptions[packageId].videosWatchedToday = 0;
-                    userVipSubscriptions[packageId].lastVideoWatchTime = now.toISOString();
+                    userVipSubscriptions[packageId].lastResetTime = newLastResetTime.toISOString();
                     // No need to reload all subscriptions for this single update
                     renderVipPackages(); // Update the UI immediately to show reset
                 } catch (error) {
