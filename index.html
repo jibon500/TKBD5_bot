@@ -556,10 +556,7 @@
     .vip-package-card .package-price-usd {
       color: var(--accent-color);
     }
-    .vip-package-card .package-price-bdt {
-      color: var(--text-muted-color);
-      font-size: 14px;
-    }
+    /* REMOVED: .vip-package-card .package-price-bdt styling */
     .vip-package-card .buy-button {
       width: 100%;
       padding: 10px;
@@ -2542,6 +2539,7 @@
             let adCounterHtml = '';
             let lastAdTimeHtml = '';
             let timerHtml = '';
+            let profitHtml = ''; // New variable for profit display
 
             if (userSubscription) {
                 const subStatus = userSubscription.status;
@@ -2567,6 +2565,29 @@
                     const seconds = Math.floor((timeUntilReset % (1000 * 60)) / 1000);
                     const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                     timerHtml = `<div class="package-detail">Reset In: ${timeStr}</div>`;
+
+                    // --- NEW: Calculate Potential Earnings and Total Earnings (Price + Profit) ---
+                    // 1. Calculate maximum possible ads for the package duration
+                    const maxAdsPossible = pkg.durationDays * pkg.dailyVideoLimit;
+                    // 2. Calculate total coins potentially earned
+                    const totalPotentialCoins = maxAdsPossible * pkg.coinsPerVideo;
+                    // 3. Convert potential coins to USD value based on current app config
+                    const potentialEarningsUSD = (totalPotentialCoins / appConfig.coinsForConversion) * appConfig.valuePerConversion;
+                    // 4. Calculate Profit (Potential Earnings - Package Price)
+                    const profitUSD = potentialEarningsUSD - pkg.price;
+                    // 5. Calculate Total Earnings (Package Price + Potential Earnings)
+                    const totalEarningsUSD = pkg.price + potentialEarningsUSD; // This is what the user gets back
+                    // Format profit string, handling negative values if any
+                    const formattedProfit = profitUSD >= 0 ?
+                        `$$${profitUSD.toFixed(2)} profit` :
+                        `-$$${Math.abs(profitUSD).toFixed(2)} loss`; // Shows loss if negative
+                    // Format total earnings string
+                    const formattedTotalEarnings = `Total Earnings: $${totalEarningsUSD.toFixed(2)}`;
+                    // --- END NEW ---
+                    // Assign the calculated profit HTML
+                    profitHtml = `<div class="package-detail" style="color: ${profitUSD >= 0 ? 'var(--success-color)' : 'var(--error-color)'};">${formattedProfit}</div>`;
+                    // Assign the calculated total earnings HTML (optional, uncomment if needed to show separately)
+                    // const totalEarningsHtml = `<div class="package-detail">${formattedTotalEarnings}</div>`;
                 } else if (subStatus === 'Pending') {
                     buttonHtml = `<button class="buy-button" disabled>Pending...</button>`;
                 } else {
@@ -2580,21 +2601,34 @@
                 buttonHtml = `<button class="buy-button" ${!isActive ? 'disabled' : ''} onclick="selectVipPackage('${pkg.id}')">
                     ${isActive ? 'Buy Now' : 'Inactive'}
                 </button>`;
+
+                // --- NEW: Calculate Potential Earnings and Total Earnings for non-subscribed packages ---
+                // 1. Calculate maximum possible ads for the package duration
+                const maxAdsPossible = pkg.durationDays * pkg.dailyVideoLimit;
+                // 2. Calculate total coins potentially earned
+                const totalPotentialCoins = maxAdsPossible * pkg.coinsPerVideo;
+                // 3. Convert potential coins to USD value based on current app config
+                const potentialEarningsUSD = (totalPotentialCoins / appConfig.coinsForConversion) * appConfig.valuePerConversion;
+                // 4. Calculate Profit (Potential Earnings - Package Price)
+                const profitUSD = potentialEarningsUSD - pkg.price;
+                // 5. Calculate Total Earnings (Package Price + Potential Earnings)
+                const totalEarningsUSD = pkg.price + potentialEarningsUSD; // This is what the user gets back
+                // Format profit string, handling negative values if any
+                const formattedProfit = profitUSD >= 0 ?
+                    `$$${profitUSD.toFixed(2)} profit` :
+                    `-$$${Math.abs(profitUSD).toFixed(2)} loss`; // Shows loss if negative
+                // Format total earnings string
+                const formattedTotalEarnings = `Total Earnings: $${totalEarningsUSD.toFixed(2)}`;
+                // --- END NEW ---
+                // Assign the calculated profit HTML
+                profitHtml = `<div class="package-detail" style="color: ${profitUSD >= 0 ? 'var(--success-color)' : 'var(--error-color)'};">${formattedProfit}</div>`;
+                // Assign the calculated total earnings HTML (optional, uncomment if needed to show separately)
+                // const totalEarningsHtml = `<div class="package-detail">${formattedTotalEarnings}</div>`;
             }
 
-            // Calculate BDT price
-            const priceBdt = (pkg.price * appConfig.usdToBdtRate).toFixed(2);
-
-            // --- NEW: Calculate Potential Earnings and Total Earnings (Price + Profit) ---
-            // 1. Calculate maximum possible ads for the package duration
-            const maxAdsPossible = pkg.durationDays * pkg.dailyVideoLimit;
-            // 2. Calculate total coins potentially earned
-            const totalPotentialCoins = maxAdsPossible * pkg.coinsPerVideo;
-            // 3. Convert potential coins to USD value based on current app config
-            const potentialEarningsUSD = (totalPotentialCoins / appConfig.coinsForConversion) * appConfig.valuePerConversion;
-            // 4. Calculate Total Earnings (Package Price + Potential Earnings)
-            const totalEarningsUSD = pkg.price + potentialEarningsUSD;
-            // --- END NEW ---
+            // --- REMOVED: BDT price calculation and display ---
+            // const priceBdt = (pkg.price * appConfig.usdToBdtRate).toFixed(2);
+            // --- END REMOVED ---
 
             return `
                 <div class="vip-package-card ${!isActive ? 'inactive' : ''}">
@@ -2608,11 +2642,12 @@
                     ${lastAdTimeHtml} <!-- Added Last Ad Time -->
                     <div class="package-price">
                         <span class="package-price-usd">$${pkg.price.toFixed(2)}</span>
+                        <!-- REMOVED: BDT price display -->
+                        <!-- <br> -->
+                        <!-- <span class="package-price-bdt">≈ ৳${priceBdt} BDT</span> -->
+                        <!-- NEW: Profit Display -->
                         <br>
-                        <span class="package-price-bdt">≈ ৳${priceBdt} BDT</span>
-                        <!-- NEW: Display Total Earnings alongside price -->
-                        <br>
-                        <span class="package-total-earnings">(Total Earnings: $${totalEarningsUSD.toFixed(2)})</span>
+                        ${profitHtml}
                     </div>
                     ${buttonHtml}
                 </div>
@@ -2626,7 +2661,7 @@
         currentSelectedPackage = pkg;
         const modal = document.getElementById('buy-vip-modal');
         document.getElementById('buy-vip-title').textContent = `Buy ${pkg.name}`;
-        // Show both USD and BDT in modal
+        // Show both USD and BDT in modal (as requested, BDT stays in the modal)
         const priceBdt = (pkg.price * appConfig.usdToBdtRate).toFixed(2);
         document.getElementById('buy-vip-message').textContent = `Price: $${pkg.price.toFixed(2)} ≈ ৳${priceBdt} BDT`;
         if (balance >= pkg.price) {
@@ -2672,6 +2707,7 @@
             await userRef.child('vipSubscriptions').child(pkg.id).set(subscriptionData);
             updateDisplay();
             closeBuyVipModal();
+
             // Update the UI immediately to show "Pending..." for the specific package
             // Find the package card and update its button
             const packageCard = document.querySelector(`.vip-package-card .buy-button[onclick="selectVipPackage('${pkg.id}')"]`);
