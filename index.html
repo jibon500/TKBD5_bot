@@ -2570,7 +2570,7 @@
 
             updateDisplay();
             closeBuyVipModal();
-            // Update the UI immediately to show "Pending..."
+            // Update the UI immediately to show "Pending..." for the specific package
             // Find the package card and update its button
             const packageCard = document.querySelector(`.vip-package-card .buy-button[onclick="selectVipPackage('${pkg.id}')"]`);
             if (packageCard) {
@@ -2630,6 +2630,12 @@
 
             await database.ref('depositRequests').push(depositRequest);
             closeDepositFormModal();
+            // Update the UI immediately to show "Pending..." for the specific package associated with this deposit request
+            // Find the package card and update its button
+            const packageCard = document.querySelector(`.vip-package-card .buy-button[onclick="selectVipPackage('${pkgId}')"]`);
+            if (packageCard) {
+                packageCard.outerHTML = '<button class="buy-button" disabled>Pending...</button>';
+            }
             showMessageModal('Success', 'Deposit request submitted! Admin will review it shortly.');
         } catch (error) {
             console.error("Error submitting deposit request:", error);
