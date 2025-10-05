@@ -2557,8 +2557,12 @@
 
             updateDisplay();
             closeBuyVipModal();
-            // Reload user's subscriptions to reflect the new one
-            await loadUserVipSubscriptions();
+            // Update the UI immediately to show "Pending..."
+            // Find the package card and update its button
+            const packageCard = document.querySelector(`.vip-package-card .buy-button[onclick="selectVipPackage('${pkg.id}')"]`);
+            if (packageCard) {
+                packageCard.outerHTML = '<button class="buy-button" disabled>Pending...</button>';
+            }
             showMessageModal('Success', `Purchase request sent! Admin will activate your ${pkg.name} package soon.`);
         } catch (error) {
             console.error("Error buying VIP with balance:", error);
