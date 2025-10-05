@@ -2532,6 +2532,7 @@
             container.innerHTML = '<p style="text-align:center; color:var(--text-muted-color);">No VIP packages available.</p>';
             return;
         }
+
         container.innerHTML = vipPackages.map(pkg => {
             const isActive = pkg.status === 'Active';
             // Check if user has an active or pending subscription for this package
@@ -2541,6 +2542,7 @@
             let adCounterHtml = '';
             let lastAdTimeHtml = '';
             let timerHtml = '';
+
             if (userSubscription) {
                 const subStatus = userSubscription.status;
                 statusBadgeHtml = `<div class="status-badge status-${subStatus.toLowerCase()}">${subStatus}</div>`;
@@ -2579,8 +2581,21 @@
                     ${isActive ? 'Buy Now' : 'Inactive'}
                 </button>`;
             }
+
             // Calculate BDT price
             const priceBdt = (pkg.price * appConfig.usdToBdtRate).toFixed(2);
+
+            // --- NEW: Calculate Potential Earnings and Total Earnings (Price + Profit) ---
+            // 1. Calculate maximum possible ads for the package duration
+            const maxAdsPossible = pkg.durationDays * pkg.dailyVideoLimit;
+            // 2. Calculate total coins potentially earned
+            const totalPotentialCoins = maxAdsPossible * pkg.coinsPerVideo;
+            // 3. Convert potential coins to USD value based on current app config
+            const potentialEarningsUSD = (totalPotentialCoins / appConfig.coinsForConversion) * appConfig.valuePerConversion;
+            // 4. Calculate Total Earnings (Package Price + Potential Earnings)
+            const totalEarningsUSD = pkg.price + potentialEarningsUSD;
+            // --- END NEW ---
+
             return `
                 <div class="vip-package-card ${!isActive ? 'inactive' : ''}">
                     ${statusBadgeHtml}
@@ -2595,12 +2610,16 @@
                         <span class="package-price-usd">$${pkg.price.toFixed(2)}</span>
                         <br>
                         <span class="package-price-bdt">≈ ৳${priceBdt} BDT</span>
+                        <!-- NEW: Display Total Earnings alongside price -->
+                        <br>
+                        <span class="package-total-earnings">(Total Earnings: $${totalEarningsUSD.toFixed(2)})</span>
                     </div>
                     ${buttonHtml}
                 </div>
             `;
         }).join('');
     }
+
     function selectVipPackage(packageId) {
         const pkg = vipPackages.find(p => p.id === packageId);
         if (!pkg) return;
@@ -2811,23 +2830,19 @@
         if (!userSub) return; // Should not happen if called correctly
         if (userSub.activatedAt) {
             const now = new Date();
-            // Calculate the time of the next expected reset based on activatedAt and lastResetTime
-            const activatedTime = new Date(userSub.activatedAt);
-            const lastResetTime = new Date(userSub.lastResetTime || userSub.activatedAt);
-            // Calculate the time difference from the last reset
-            const timeSinceLastReset = now - lastResetTime;
-            // If 12 hours have passed since the last reset, reset the counter
-            if (timeSinceLastReset >= 12 * 60 * 60 * 1000) { // 12 hours in milliseconds
+            const timeDiff = now - new Date(userSub.activatedAt);
+            const hoursDiff = timeDiff / (1000 * 60 * 60);
+            if (hoursDiff >= 12) {
+                // Reset the counter
                 try {
-                    const newLastResetTime = new Date(lastResetTime.getTime() + 12 * 60 * 60 * 1000);
                     await database.ref(`users/${tgUser.id}/vipSubscriptions/${packageId}`).update({
                         videosWatchedToday: 0,
-                        lastResetTime: newLastResetTime.toISOString() // Set new reset time
+                        lastVideoWatchTime: now.toISOString() // Set new start time
                     });
-                    console.log(`VIP counter for package ${packageId} reset at ${newLastResetTime.toISOString()}.`);
+                    console.log(`VIP counter for package ${packageId} reset after 12 hours.`);
                     // Update local state
                     userVipSubscriptions[packageId].videosWatchedToday = 0;
-                    userVipSubscriptions[packageId].lastResetTime = newLastResetTime.toISOString();
+                    userVipSubscriptions[packageId].lastVideoWatchTime = now.toISOString();
                     // No need to reload all subscriptions for this single update
                     renderVipPackages(); // Update the UI immediately to show reset
                 } catch (error) {
