@@ -1,1 +1,494 @@
-gjhhih
+
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gaming App - User Panel</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, set, get, child, onValue, update, push } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBB4om5OumGsXha9xj4WOOeHI4nerhqlV8",
+            authDomain: "earning-app-80258.firebaseapp.com",
+            databaseURL: "https://earning-app-80258-default-rtdb.firebaseio.com",
+            projectId: "earning-app-80258",
+            storageBucket: "earning-app-80258.appspot.com",
+            messagingSenderId: "25930019210",
+            appId: "1:25930019210:web:ca3bf5dd50fb528b631873",
+            measurementId: "G-432VZMDR6Y"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        
+        window.firebaseDb = db;
+        window.firebaseRef = ref;
+        window.firebaseSet = set;
+        window.firebaseGet = get;
+        window.firebaseChild = child;
+        window.firebaseOnValue = onValue;
+        window.firebaseUpdate = update;
+        window.firebasePush = push;
+    </script>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); }
+        .fade-enter-active, .fade-leave-active { transition: opacity 0.3s ease; }
+        .fade-enter-from, .fade-leave-to { opacity: 0; }
+        .glass { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .btn-primary { background: linear-gradient(to right, #f46b45, #eea849); }
+        .btn-success { background: linear-gradient(to right, #11998e, #38ef7d); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #ffffff3b; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-white min-h-screen overflow-x-hidden">
+    <div id="app">
+        <!-- Auth Loading / Login Screen -->
+        <div v-if="!user" class="flex items-center justify-center h-screen flex-col">
+            <div class="w-20 h-20 border-4 border-t-transparent border-white rounded-full animate-spin mb-4"></div>
+            <p class="text-gray-300">Telegram Authentication...</p>
+        </div>
+
+        <!-- Main App Container -->
+        <div v-else class="pb-20">
+            <!-- Header -->
+            <header class="sticky top-0 z-50 glass p-4 flex justify-between items-center shadow-lg">
+                <h1 class="text-xl font-bold text-yellow-400">🎮 Play & Earn</h1>
+                <div class="flex items-center gap-3">
+                    <div class="bg-gray-800 px-3 py-1 rounded-full text-sm font-semibold flex items-center">
+                        ৳ {{ user.balance }}
+                    </div>
+                    <img @click="currentTab = 'profile'" :src="user.photo" class="w-10 h-10 rounded-full border-2 border-yellow-400 cursor-pointer" alt="Profile">
+                </div>
+            </header>
+
+            <!-- Dynamic Content Area -->
+            <div class="container mx-auto p-4">
+                
+                <!-- Home / Game List -->
+                <div v-if="currentTab === 'home'">
+                    <div class="flex gap-4 mb-6">
+                        <button @click="createRoom('ludo')" class="flex-1 glass p-6 rounded-2xl hover:bg-white/20 transition flex flex-col items-center">
+                            <span class="text-4xl mb-2">🎲</span>
+                            <span class="font-bold">Ludo</span>
+                            <span class="text-xs text-yellow-300">Entry ৳20</span>
+                        </button>
+                        <button @click="createRoom('carrom')" class="flex-1 glass p-6 rounded-2xl hover:bg-white/20 transition flex flex-col items-center">
+                            <span class="text-4xl mb-2">🎯</span>
+                            <span class="font-bold">Carrom</span>
+                            <span class="text-xs text-yellow-300">Entry ৳20</span>
+                        </button>
+                    </div>
+
+                    <h2 class="text-lg font-bold mb-3 border-l-4 border-yellow-400 pl-2">Active Rooms</h2>
+                    <div class="space-y-3">
+                        <div v-for="room in activeRooms" :key="room.id" class="glass p-4 rounded-xl flex justify-between items-center">
+                            <div>
+                                <h3 class="font-bold">{{ room.gameType == 'ludo' ? '🎲 Ludo' : '🎯 Carrom' }}</h3>
+                                <p class="text-xs text-gray-400">Created by: {{ room.creatorName }}</p>
+                            </div>
+                            <button v-if="!room.opponent" @click="joinRoom(room.id)" class="btn-success px-4 py-2 rounded-lg text-sm font-bold">Join ৳20</button>
+                            <span v-else class="text-yellow-400 text-sm animate-pulse">Playing...</span>
+                        </div>
+                        <p v-if="activeRooms.length === 0" class="text-center text-gray-500 py-10">No active rooms. Create one!</p>
+                    </div>
+                </div>
+
+                <!-- Wallet Section -->
+                <div v-if="currentTab === 'wallet'">
+                    <div class="glass p-6 rounded-2xl text-center mb-6">
+                        <p class="text-sm text-gray-400">Current Balance</p>
+                        <h2 class="text-4xl font-bold text-yellow-400 my-2">৳ {{ user.balance }}</h2>
+                    </div>
+
+                    <div class="flex gap-2 mb-4">
+                        <button @click="walletMode='deposit'" :class="{'bg-yellow-500 text-black': walletMode==='deposit'}" class="flex-1 py-2 rounded-lg font-bold glass transition">Deposit</button>
+                        <button @click="walletMode='withdraw'" :class="{'bg-yellow-500 text-black': walletMode==='withdraw'}" class="flex-1 py-2 rounded-lg font-bold glass transition">Withdraw</button>
+                    </div>
+
+                    <!-- Deposit Form -->
+                    <div v-if="walletMode==='deposit'" class="glass p-4 rounded-xl space-y-3">
+                        <input v-model="depositAmount" type="number" placeholder="Amount (Min 50)" class="w-full bg-gray-800 p-3 rounded-lg outline-none focus:ring-2 ring-yellow-400">
+                        <select v-model="depositMethod" class="w-full bg-gray-800 p-3 rounded-lg outline-none">
+                            <option value="" disabled>Select Method</option>
+                            <option v-for="m in paymentMethods" :key="m.id" :value="m.id">{{ m.name }} ({{ m.number }})</option>
+                        </select>
+                        <p v-if="selectedPaymentDeposit" class="text-xs text-gray-400">Send money to: {{ selectedPaymentDeposit.number }}</p>
+                        <input v-model="depositSender" type="text" placeholder="Sender Number / TrxID" class="w-full bg-gray-800 p-3 rounded-lg outline-none">
+                        <button @click="submitDeposit" class="w-full btn-primary p-3 rounded-lg font-bold">Submit Request</button>
+                    </div>
+
+                    <!-- Withdraw Form -->
+                    <div v-if="walletMode==='withdraw'" class="glass p-4 rounded-xl space-y-3">
+                        <input v-model="withdrawAmount" type="number" placeholder="Amount" class="w-full bg-gray-800 p-3 rounded-lg outline-none">
+                        <select v-model="withdrawMethod" class="w-full bg-gray-800 p-3 rounded-lg outline-none">
+                            <option value="" disabled>Select Method</option>
+                            <option v-for="m in paymentMethods" :key="m.id" :value="m.id">{{ m.name }}</option>
+                        </select>
+                        <input v-model="withdrawAccount" type="text" placeholder="Account Number" class="w-full bg-gray-800 p-3 rounded-lg outline-none">
+                        
+                        <div class="text-xs text-gray-400 p-2 bg-gray-800 rounded">
+                            <p>Charge: {{ calculateWithdrawCharge }} TK</p>
+                            <p>You will get: {{ withdrawAmount - calculateWithdrawCharge }} TK</p>
+                        </div>
+
+                        <button @click="submitWithdraw" class="w-full btn-success p-3 rounded-lg font-bold">Withdraw Request</button>
+                    </div>
+                </div>
+
+                <!-- Profile Section -->
+                <div v-if="currentTab === 'profile'" class="text-center">
+                    <img :src="user.photo" class="w-24 h-24 rounded-full mx-auto border-4 border-yellow-400 shadow-lg">
+                    <h2 class="text-2xl font-bold mt-2">{{ user.name }}</h2>
+                    <p class="text-gray-400 text-sm">ID: {{ user.uid }}</p>
+                    
+                    <div class="mt-6 text-left glass p-4 rounded-xl">
+                        <div class="flex justify-between mb-2">
+                            <span>Referral Code:</span>
+                            <span class="text-yellow-400 font-mono font-bold">{{ user.refCode }}</span>
+                        </div>
+                        <button @click="copyReferral" class="w-full bg-blue-600 p-2 rounded-lg text-sm font-bold mt-2">Copy Link & Share</button>
+                    </div>
+
+                    <div class="mt-6 space-y-2">
+                        <button @click="currentTab='about'" class="w-full text-left glass p-3 rounded-lg">ℹ️ About Us</button>
+                        <button @click="currentTab='terms'" class="w-full text-left glass p-3 rounded-lg">📜 Terms & Conditions</button>
+                        <button @click="currentTab='privacy'" class="w-full text-left glass p-3 rounded-lg">🔒 Privacy Policy</button>
+                    </div>
+                </div>
+
+                <!-- Game Play Area (Simple Simulation) -->
+                <div v-if="currentTab === 'playing'">
+                    <div class="glass p-4 rounded-xl">
+                        <h2 class="text-center font-bold text-xl mb-4">{{ currentRoom.gameType == 'ludo' ? '🎲 Ludo Match' : '🎯 Carrom Match' }}</h2>
+                        <div class="h-64 bg-gray-900 rounded-xl flex items-center justify-center mb-4 border border-gray-700">
+                            <div class="text-center">
+                                <p class="text-gray-400 mb-4">Game Logic Placeholder</p>
+                                <p class="text-lg">VS</p>
+                                <div class="flex justify-around mt-4">
+                                    <div>
+                                        <img :src="currentRoom.creatorPhoto" class="w-10 h-10 rounded-full mx-auto">
+                                        <p class="text-xs mt-1">{{ currentRoom.creatorName }}</p>
+                                    </div>
+                                    <div>
+                                        <img :src="currentRoom.opponentPhoto" class="w-10 h-10 rounded-full mx-auto">
+                                        <p class="text-xs mt-1">{{ currentRoom.opponentName }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Mock Result Button for Simulation -->
+                        <button @click="simulateWin" class="w-full bg-green-600 p-3 rounded-lg font-bold">Finish Game (I Won)</button>
+                        <button @click="simulateLoss" class="w-full bg-red-600 p-3 rounded-lg font-bold mt-2 opacity-50">I Lost</button>
+                    </div>
+                </div>
+
+                <!-- Static Pages -->
+                <div v-if="currentTab === 'about' || currentTab === 'terms' || currentTab === 'privacy'" class="glass p-4 rounded-xl">
+                    <button @click="currentTab='profile'" class="text-yellow-400 mb-4">&larr; Back</button>
+                    <h2 class="text-xl font-bold mb-4 capitalize">{{ currentTab }}</h2>
+                    <p class="text-sm text-gray-300 leading-relaxed">This is the {{ currentTab }} section. Here you can find all the details regarding our platform policies and company information. We ensure fair play and secure transactions.</p>
+                </div>
+
+            </div>
+
+            <!-- Bottom Navigation -->
+            <nav class="fixed bottom-0 left-0 right-0 glass border-t border-white/10 flex justify-around py-3">
+                <button @click="currentTab = 'home'" :class="{'text-yellow-400': currentTab === 'home'}" class="flex flex-col items-center text-xs">
+                    <span class="text-xl">🏠</span> Home
+                </button>
+                <button @click="currentTab = 'wallet'" :class="{'text-yellow-400': currentTab === 'wallet'}" class="flex flex-col items-center text-xs">
+                    <span class="text-xl">💰</span> Wallet
+                </button>
+                <button @click="currentTab = 'history'" :class="{'text-yellow-400': currentTab === 'history'}" class="flex flex-col items-center text-xs">
+                    <span class="text-xl">📜</span> History
+                </button>
+                <button @click="currentTab = 'profile'" :class="{'text-yellow-400': currentTab === 'profile'}" class="flex flex-col items-center text-xs">
+                    <span class="text-xl">👤</span> Profile
+                </button>
+            </nav>
+        </div>
+    </div>
+
+    <script>
+        const { createApp, ref, computed, onMounted, watch } = Vue;
+
+        createApp({
+            setup() {
+                const user = ref(null);
+                const currentTab = ref('home');
+                const activeRooms = ref([]);
+                const paymentMethods = ref([]);
+                const db = window.firebaseDb;
+                
+                // Wallet States
+                const walletMode = ref('deposit');
+                const depositAmount = ref('');
+                const depositMethod = ref('');
+                const depositSender = ref('');
+                const withdrawAmount = ref('');
+                const withdrawMethod = ref('');
+                const withdrawAccount = ref('');
+
+                // Game States
+                const currentRoom = ref(null);
+
+                // Auth Logic
+                onMounted(() => {
+                    // Check if running inside Telegram
+                    if (window.Telegram && window.Telegram.WebApp) {
+                        const tg = window.Telegram.WebApp;
+                        tg.ready();
+                        const tgUser = tg.initDataUnsafe.user;
+                        
+                        if (tgUser) {
+                            loginUser(tgUser);
+                        } else {
+                            // Fallback for testing outside telegram
+                            mockLogin();
+                        }
+                    } else {
+                        // Fallback for browser testing
+                        mockLogin();
+                    }
+
+                    // Fetch Data
+                    fetchRooms();
+                    fetchPaymentMethods();
+                });
+
+                const loginUser = async (tgUser) => {
+                    const userId = String(tgUser.id);
+                    const userRef = window.firebaseRef(db, `users/${userId}`);
+                    const snapshot = await window.firebaseGet(userRef);
+
+                    if (snapshot.exists()) {
+                        user.value = snapshot.val();
+                    } else {
+                        const newUser = {
+                            uid: userId,
+                            name: tgUser.first_name + ' ' + (tgUser.last_name || ''),
+                            photo: tgUser.photo_url || 'https://ui-avatars.com/api/?name='+tgUser.first_name,
+                            balance: 0,
+                            refCode: Math.random().toString(36).substring(7).toUpperCase(),
+                            createdAt: Date.now()
+                        };
+                        await window.firebaseSet(userRef, newUser);
+                        user.value = newUser;
+                    }
+                    
+                    // Listen for balance changes
+                    window.firebaseOnValue(userRef, (snap) => {
+                        user.value = snap.val();
+                    });
+                };
+
+                const mockLogin = () => {
+                    // Mock user for browser testing
+                    const mockId = 'browser_user_123';
+                    loginUser({
+                        id: mockId,
+                        first_name: 'Test',
+                        last_name: 'User',
+                        photo_url: 'https://ui-avatars.com/api/?name=Test+User'
+                    });
+                };
+
+                // Database Listeners
+                const fetchRooms = () => {
+                    const roomsRef = window.firebaseRef(db, 'rooms');
+                    window.firebaseOnValue(roomsRef, (snap) => {
+                        const data = snap.val();
+                        const arr = [];
+                        for(let id in data) {
+                            if(!data[id].completed) {
+                                arr.push({id, ...data[id]});
+                            }
+                        }
+                        activeRooms.value = arr;
+                    });
+                };
+
+                const fetchPaymentMethods = () => {
+                    const payRef = window.firebaseRef(db, 'settings/paymentMethods');
+                    window.firebaseOnValue(payRef, (snap) => {
+                        const data = snap.val();
+                        const arr = [];
+                        for(let id in data) {
+                            arr.push({id, ...data[id]});
+                        }
+                        paymentMethods.value = arr;
+                    });
+                };
+
+                // Actions
+                const createRoom = async (type) => {
+                    if(user.value.balance < 20) {
+                        alert('Insufficient Balance! Please deposit.');
+                        currentTab.value = 'wallet';
+                        return;
+                    }
+
+                    const roomRef = window.firebaseRef(db, 'rooms');
+                    const newRoomRef = window.firebasePush(roomRef);
+                    
+                    const roomData = {
+                        gameType: type,
+                        creatorId: user.value.uid,
+                        creatorName: user.value.name,
+                        creatorPhoto: user.value.photo,
+                        stake: 20,
+                        status: 'waiting',
+                        createdAt: Date.now()
+                    };
+
+                    await window.firebaseSet(newRoomRef, roomData);
+                    
+                    // Deduct Balance
+                    await updateBalance(-20);
+                    
+                    // Enter room view
+                    currentRoom.value = {id: newRoomRef.key, ...roomData};
+                    currentTab.value = 'playing';
+                    
+                    // Listen for opponent
+                    window.firebaseOnValue(window.firebaseRef(db, `rooms/${newRoomRef.key}`), (snap) => {
+                        const val = snap.val();
+                        if(val.opponent) {
+                            currentRoom.value = val;
+                        }
+                    });
+                };
+
+                const joinRoom = async (roomId) => {
+                    if(user.value.balance < 20) {
+                        alert('Insufficient Balance!');
+                        return;
+                    }
+
+                    const roomRef = window.firebaseRef(db, `rooms/${roomId}`);
+                    const snap = await window.firebaseGet(roomRef);
+                    const room = snap.val();
+
+                    if(room.opponent) {
+                        alert('Room full!');
+                        return;
+                    }
+
+                    await window.firebaseUpdate(roomRef, {
+                        opponent: user.value.uid,
+                        opponentName: user.value.name,
+                        opponentPhoto: user.value.photo,
+                        status: 'playing'
+                    });
+
+                    await updateBalance(-20);
+                    currentRoom.value = {id: roomId, ...room, opponent: user.value.uid, opponentName: user.value.name, opponentPhoto: user.value.photo};
+                    currentTab.value = 'playing';
+                };
+
+                const simulateWin = async () => {
+                    if(!currentRoom.value) return;
+                    // Add winning amount (36 Taka)
+                    await updateBalance(36);
+                    await window.firebaseUpdate(window.firebaseRef(db, `rooms/${currentRoom.value.id}`), { completed: true, winner: user.value.uid });
+                    alert('Congratulations! You won 36 TK');
+                    currentRoom.value = null;
+                    currentTab.value = 'home';
+                };
+
+                const simulateLoss = async () => {
+                     await window.firebaseUpdate(window.firebaseRef(db, `rooms/${currentRoom.value.id}`), { completed: true });
+                     currentRoom.value = null;
+                     currentTab.value = 'home';
+                };
+
+                const updateBalance = async (amount) => {
+                    const userRef = window.firebaseRef(db, `users/${user.value.uid}`);
+                    const newBalance = user.value.balance + amount;
+                    await window.firebaseUpdate(userRef, { balance: newBalance });
+                };
+
+                // Wallet Computed & Methods
+                const selectedPaymentDeposit = computed(() => paymentMethods.value.find(m => m.id === depositMethod.value));
+                
+                const calculateWithdrawCharge = computed(() => {
+                    if(!withdrawMethod.value || !withdrawAmount.value) return 0;
+                    const method = paymentMethods.value.find(m => m.id === withdrawMethod.value);
+                    if(!method) return 0;
+                    // Example: bKash free, others fixed fee or percent
+                    if(method.name.toLowerCase().includes('bkash')) return 0;
+                    return method.withdrawFee || 5; // Default fee 5
+                });
+
+                const submitDeposit = async () => {
+                    if(!depositAmount.value || !depositMethod.value) return alert('Fill all fields');
+                    const txRef = window.firebaseRef(db, 'transactions');
+                    await window.firebasePush(txRef, {
+                        uid: user.value.uid,
+                        name: user.value.name,
+                        amount: Number(depositAmount.value),
+                        method: selectedPaymentDeposit.value.name,
+                        sender: depositSender.value,
+                        type: 'deposit',
+                        status: 'pending',
+                        time: Date.now()
+                    });
+                    alert('Request Submitted! Wait for admin approval.');
+                    depositAmount.value = '';
+                };
+
+                const submitWithdraw = async () => {
+                    const totalReq = Number(withdrawAmount.value);
+                    const charge = calculateWithdrawCharge.value;
+                    const finalAmount = totalReq - charge;
+
+                    if(user.value.balance < totalReq) return alert('Insufficient Balance');
+                    if(finalAmount <= 0) return alert('Invalid amount');
+
+                    // Deduct immediately
+                    await updateBalance(-totalReq);
+
+                    const method = paymentMethods.value.find(m => m.id === withdrawMethod.value);
+                    
+                    const txRef = window.firebaseRef(db, 'transactions');
+                    await window.firebasePush(txRef, {
+                        uid: user.value.uid,
+                        name: user.value.name,
+                        amount: finalAmount,
+                        method: method.name,
+                        account: withdrawAccount.value,
+                        type: 'withdraw',
+                        status: 'pending',
+                        time: Date.now()
+                    });
+                    alert('Withdraw Request Submitted!');
+                    withdrawAmount.value = '';
+                };
+
+                const copyReferral = () => {
+                    const link = `https://t.me/YourBotUsername?start=${user.value.refCode}`;
+                    navigator.clipboard.writeText(link);
+                    alert('Referral Link Copied!');
+                };
+
+                return {
+                    user, currentTab, activeRooms, paymentMethods,
+                    walletMode, depositAmount, depositMethod, depositSender, selectedPaymentDeposit,
+                    withdrawAmount, withdrawMethod, withdrawAccount, calculateWithdrawCharge,
+                    createRoom, joinRoom, currentRoom, simulateWin, simulateLoss,
+                    submitDeposit, submitWithdraw, copyReferral
+                };
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
